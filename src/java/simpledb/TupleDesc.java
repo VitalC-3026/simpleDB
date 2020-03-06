@@ -7,7 +7,7 @@ import java.util.*;
  * TupleDesc describes the schema of a tuple.
  */
 public class TupleDesc implements Serializable {
-
+    private List<> item;
     /**
      * A help class to facilitate organizing the information of each field
      * */
@@ -79,7 +79,7 @@ public class TupleDesc implements Serializable {
      */
     public int numFields() {
         // some code goes here
-        return 0;
+        return item.size();
     }
 
     /**
@@ -93,7 +93,10 @@ public class TupleDesc implements Serializable {
      */
     public String getFieldName(int i) throws NoSuchElementException {
         // some code goes here
-        return null;
+        if (i >= item.size) {
+            throw new NoSuchElementException();
+        }
+        return item.get(i).fieldName;
     }
 
     /**
@@ -131,6 +134,10 @@ public class TupleDesc implements Serializable {
      */
     public int getSize() {
         // some code goes here
+        int sum = 0;
+        for (int i = 0; i< item.size(); i++) {
+            sum += getFieldType(i).getLen();
+        }
         return 0;
     }
 
@@ -162,6 +169,7 @@ public class TupleDesc implements Serializable {
 
     public boolean equals(Object o) {
         // some code goes here
+        // 判断两个对象
         return false;
     }
 
