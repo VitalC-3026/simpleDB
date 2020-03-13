@@ -180,8 +180,19 @@ public class TupleDesc implements Serializable {
      */
     public static TupleDesc merge(TupleDesc td1, TupleDesc td2) {
         // some code goes here
-        List<TDItem> TDItems = td1.items;
-        TDItems.addAll(td2.items);
+        List<TDItem> TDItems = new ArrayList<>();
+        if(td1 != null) {
+            TDItems.addAll(td1.items);
+            if (td2 != null) {
+                TDItems.addAll(td1.items.size(),td2.items);
+            }
+        } else {
+            if (td2 != null) {
+                TDItems.addAll(td2.items);
+            }
+        }
+
+
         Type[] typeAr = new Type[TDItems.size()];
         String[] fieldAr = new String[TDItems.size()];
         for (int i = 0; i < TDItems.size(); i++) {
