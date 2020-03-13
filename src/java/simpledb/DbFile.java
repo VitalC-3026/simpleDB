@@ -26,7 +26,7 @@ public interface DbFile {
      * @throws IOException if the write fails
      *
      */
-    public void writePage(Page p) throws IOException;
+    public void writePage(Page p) throws IOException, NoSuchFieldException;
 
     /**
      * Inserts the specified tuple to the file on behalf of transaction.
@@ -41,7 +41,7 @@ public interface DbFile {
      * @throws IOException if the needed file can't be read/written
      */
     public ArrayList<Page> insertTuple(TransactionId tid, Tuple t)
-        throws DbException, IOException, TransactionAbortedException;
+            throws DbException, IOException, TransactionAbortedException, NoSuchFieldException;
 
     /**
      * Removes the specified tuple from the file on behalf of the specified

@@ -51,7 +51,7 @@ public class Query implements Serializable {
     }
 
     public void start() throws IOException, DbException,
-            TransactionAbortedException {
+            TransactionAbortedException, NoSuchFieldException {
         op.open();
 
         started = true;
@@ -62,7 +62,7 @@ public class Query implements Serializable {
     }
 
     /** @return true if there are more tuples remaining. */
-    public boolean hasNext() throws DbException, TransactionAbortedException {
+    public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException {
         return op.hasNext();
     }
 
@@ -79,7 +79,7 @@ public class Query implements Serializable {
      *             If the transaction is aborted (e.g., due to a deadlock)
      */
     public Tuple next() throws DbException, NoSuchElementException,
-            TransactionAbortedException {
+            TransactionAbortedException, NoSuchFieldException {
         if (!started)
             throw new DbException("Database not started.");
 
@@ -92,7 +92,7 @@ public class Query implements Serializable {
         started = false;
     }
 
-    public void execute() throws IOException, DbException, TransactionAbortedException {
+    public void execute() throws IOException, DbException, TransactionAbortedException, NoSuchFieldException {
         TupleDesc td = this.getOutputTupleDesc();
 
         String names = "";

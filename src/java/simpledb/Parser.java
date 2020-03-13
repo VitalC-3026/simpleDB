@@ -322,7 +322,7 @@ public class Parser {
 
     public Query handleInsertStatement(ZInsert s, TransactionId tId)
             throws TransactionAbortedException, DbException, IOException,
-            simpledb.ParsingException, Zql.ParseException {
+            simpledb.ParsingException, Zql.ParseException, NoSuchFieldException {
         int tableId;
         try {
             tableId = Database.getCatalog().getTableId(s.getTable()); // will

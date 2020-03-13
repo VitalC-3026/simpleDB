@@ -16,13 +16,13 @@ public interface OpIterator extends Serializable{
    * @throws DbException when there are problems opening/accessing the database.
    */
   public void open()
-      throws DbException, TransactionAbortedException;
+          throws DbException, TransactionAbortedException, NoSuchFieldException;
 
   /** Returns true if the iterator has more tuples.
    * @return true f the iterator has more tuples.
    * @throws IllegalStateException If the iterator has not been opened
  */
-  public boolean hasNext() throws DbException, TransactionAbortedException;
+  public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException;
 
   /**
    * Returns the next tuple from the operator (typically implementing by reading
@@ -32,7 +32,7 @@ public interface OpIterator extends Serializable{
    * @throws NoSuchElementException if there are no more tuples.
    * @throws IllegalStateException If the iterator has not been opened
    */
-  public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException;
+  public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException, NoSuchFieldException;
 
   /**
    * Resets the iterator to the start.

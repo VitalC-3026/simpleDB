@@ -50,7 +50,11 @@ public class BTreeLeafPageTest extends SimpleDbTestBase {
 		for (int[] tuple : EXAMPLE_VALUES) {
 			Tuple tup = new Tuple(Utility.getTupleDesc(2));
 			for (int i = 0; i < tuple.length; i++) {
-				tup.setField(i, new IntField(tuple[i]));
+				try {
+					tup.setField(i, new IntField(tuple[i]));
+				} catch (NoSuchFieldException e) {
+					e.printStackTrace();
+				}
 			}
 			tuples.add(tup);
 		}
@@ -59,7 +63,7 @@ public class BTreeLeafPageTest extends SimpleDbTestBase {
 		try {
 			EXAMPLE_DATA = BTreeFileEncoder.convertToLeafPage(tuples, 
 					BufferPool.getPageSize(), 2, new Type[]{Type.INT_TYPE, Type.INT_TYPE}, 0);
-		} catch (IOException e) {
+		} catch (IOException | NoSuchFieldException e) {
 			throw new RuntimeException(e);
 		}
 	}

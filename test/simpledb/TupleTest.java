@@ -12,7 +12,7 @@ public class TupleTest extends SimpleDbTestBase {
     /**
      * Unit test for Tuple.getField() and Tuple.setField()
      */
-    @Test public void modifyFields() {
+    @Test public void modifyFields() throws NoSuchFieldException {
         TupleDesc td = Utility.getTupleDesc(2);
 
         Tuple tup = new Tuple(td);

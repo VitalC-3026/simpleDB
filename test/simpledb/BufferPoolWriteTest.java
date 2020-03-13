@@ -31,7 +31,7 @@ public class BufferPoolWriteTest extends TestUtil.CreateHeapFile {
     	// each on a new page
     	@Override
     	public ArrayList<Page> insertTuple(TransactionId tid, Tuple t)
-    			throws DbException, IOException, TransactionAbortedException {
+				throws DbException, IOException, TransactionAbortedException, NoSuchFieldException {
     		ArrayList<Page> dirtypages = new ArrayList<Page>();
     		for(int i = 0; i < duplicates; i++) {
     			// create a blank page

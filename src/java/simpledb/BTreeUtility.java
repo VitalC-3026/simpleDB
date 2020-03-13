@@ -19,7 +19,7 @@ public class BTreeUtility {
 
 	public static final int MAX_RAND_VALUE = 1 << 16;
 
-	public static ArrayList<Integer> tupleToList(Tuple tuple) {
+	public static ArrayList<Integer> tupleToList(Tuple tuple) throws NoSuchFieldException {
         ArrayList<Integer> list = new ArrayList<Integer>();
         for (int i = 0; i < tuple.getTupleDesc().numFields(); ++i) {
             int value = ((IntField)tuple.getField(i)).getValue();
@@ -32,7 +32,7 @@ public class BTreeUtility {
 	 * @return a Tuple with a single IntField with value n and with
 	 *   RecordId(BTreePageId(1,2, BTreePageId.LEAF), 3)
 	 */
-	public static Tuple getBTreeTuple(int n) {
+	public static Tuple getBTreeTuple(int n) throws NoSuchFieldException {
 		Tuple tup = new Tuple(Utility.getTupleDesc(1));
 		tup.setRecordId(new RecordId(new BTreePageId(1, 2, BTreePageId.LEAF), 3));
 		tup.setField(0, new IntField(n));
@@ -43,7 +43,7 @@ public class BTreeUtility {
 	 * @return a Tuple with an IntField for every element of tupdata
 	 *   and RecordId(BTreePageId(1, 2, BTreePageId.LEAF), 3)
 	 */
-	public static Tuple getBTreeTuple(int[] tupdata) {
+	public static Tuple getBTreeTuple(int[] tupdata) throws NoSuchFieldException {
 		Tuple tup = new Tuple(Utility.getTupleDesc(tupdata.length));
 		tup.setRecordId(new RecordId(new BTreePageId(1, 2, BTreePageId.LEAF), 3));
 		for (int i = 0; i < tupdata.length; ++i)
@@ -55,7 +55,7 @@ public class BTreeUtility {
 	 * @return a Tuple with an IntField for every element of tupdata
 	 *   and RecordId(BTreePageId(1, 2, BTreePageId.LEAF), 3)
 	 */
-	public static Tuple getBTreeTuple(ArrayList<Integer> tupdata) {
+	public static Tuple getBTreeTuple(ArrayList<Integer> tupdata) throws NoSuchFieldException {
 		Tuple tup = new Tuple(Utility.getTupleDesc(tupdata.size()));
 		tup.setRecordId(new RecordId(new BTreePageId(1, 2, BTreePageId.LEAF), 3));
 		for (int i = 0; i < tupdata.size(); ++i)
@@ -67,7 +67,7 @@ public class BTreeUtility {
 	 * @return a Tuple with a 'width' IntFields each with value n and
 	 *   with RecordId(BTreePageId(1, 2, BTreePageId.LEAF), 3)
 	 */
-	public static Tuple getBTreeTuple(int n, int width) {
+	public static Tuple getBTreeTuple(int n, int width) throws NoSuchFieldException {
 		Tuple tup = new Tuple(Utility.getTupleDesc(width));
 		tup.setRecordId(new RecordId(new BTreePageId(1, 2, BTreePageId.LEAF), 3));
 		for (int i = 0; i < width; ++i)
@@ -115,7 +115,7 @@ public class BTreeUtility {
 	public static BTreeFile createRandomBTreeFile(
 			int columns, int rows, Map<Integer, Integer> columnSpecification,
 			ArrayList<ArrayList<Integer>> tuples, int keyField)
-					throws IOException, DbException, TransactionAbortedException {
+			throws IOException, DbException, TransactionAbortedException, NoSuchFieldException {
 		return createRandomBTreeFile(columns, rows, MAX_RAND_VALUE, columnSpecification, tuples, keyField);
 	}
 
@@ -134,8 +134,8 @@ public class BTreeUtility {
 	 */
 	public static BTreeFile createRandomBTreeFile(int columns, int rows,
 			int maxValue, Map<Integer, Integer> columnSpecification,
-			ArrayList<ArrayList<Integer>> tuples, int keyField) 
-					throws IOException, DbException, TransactionAbortedException {
+			ArrayList<ArrayList<Integer>> tuples, int keyField)
+			throws IOException, DbException, TransactionAbortedException, NoSuchFieldException {
 
 		if (tuples != null) {
 			tuples.clear();
@@ -237,7 +237,7 @@ public class BTreeUtility {
 	 * @param max - the maximum value
 	 * @return the list of tuples
 	 */
-	public static ArrayList<Tuple> generateRandomTuples(int columns, int rows, int min, int max) {
+	public static ArrayList<Tuple> generateRandomTuples(int columns, int rows, int min, int max) throws NoSuchFieldException {
 		ArrayList<ArrayList<Integer>> tuples = new ArrayList<ArrayList<Integer>>(rows);
 		generateRandomTuples(columns, rows, min, max, null, tuples);
 		ArrayList<Tuple> tupleList = new ArrayList<Tuple>();
@@ -292,7 +292,7 @@ public class BTreeUtility {
 	 * @return the leaf page
 	 * @throws IOException
 	 */
-	public static BTreeLeafPage createRandomLeafPage(BTreePageId pid, int columns, int keyField, int min, int max) throws IOException {
+	public static BTreeLeafPage createRandomLeafPage(BTreePageId pid, int columns, int keyField, int min, int max) throws IOException, NoSuchFieldException {
 		int tuplesPerPage = getNumTuplesPerPage(columns);
 		return createRandomLeafPage(pid, columns, keyField, tuplesPerPage, min, max);
 	}
@@ -308,7 +308,7 @@ public class BTreeUtility {
 	 * @return the leaf page
 	 * @throws IOException
 	 */
-	public static BTreeLeafPage createRandomLeafPage(BTreePageId pid, int columns, int keyField, int numTuples, int min, int max) throws IOException {
+	public static BTreeLeafPage createRandomLeafPage(BTreePageId pid, int columns, int keyField, int numTuples, int min, int max) throws IOException, NoSuchFieldException {
 		Type[] typeAr = new Type[columns];
 		Arrays.fill(typeAr, Type.INT_TYPE);
 		byte[] data = BTreeFileEncoder.convertToLeafPage(BTreeUtility.generateRandomTuples(columns, numTuples, min, max), 
@@ -378,8 +378,8 @@ public class BTreeUtility {
 	 */
 	public static BTreeFile createBTreeFile(int columns, int rows,
 			Map<Integer, Integer> columnSpecification,
-			ArrayList<ArrayList<Integer>> tuples, int keyField) 
-					throws IOException, DbException, TransactionAbortedException {
+			ArrayList<ArrayList<Integer>> tuples, int keyField)
+			throws IOException, DbException, TransactionAbortedException, NoSuchFieldException {
 		if (tuples != null) {
 			tuples.clear();
 		} else {
@@ -675,8 +675,9 @@ public class BTreeUtility {
 		/**
 		 * @param bf the B+ tree file into which we want to insert the tuple
 		 * @param tupdata the data of the tuple to insert
-		 * @param the list of tuples that were successfully inserted
+		 * @param insertedTuples list of tuples that were successfully inserted
 		 */
+		// changes for tuple's field exception: insertedTuples <- the (2020.3.13)
 		public BTreeInserter(BTreeFile bf, int[] tupdata, BlockingQueue<ArrayList<Integer>> insertedTuples) {
 			init(bf, tupdata, insertedTuples);
 		}
@@ -762,8 +763,9 @@ public class BTreeUtility {
 
 		/**
 		 * @param bf the B+ tree file from which we want to delete the tuple(s)
-		 * @param the list of tuples to delete
+		 * @param insertedTuples list of tuples to delete
 		 */
+		// changes for tuple's field exception: insertedTuples <- the (2020.3.13)
 		public BTreeDeleter(BTreeFile bf, BlockingQueue<ArrayList<Integer>> insertedTuples) {
 			init(bf, insertedTuples);
 		}

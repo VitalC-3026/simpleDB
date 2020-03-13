@@ -196,7 +196,7 @@ public class LogFile {
     */
     public  synchronized void logWrite(TransactionId tid, Page before,
                                        Page after)
-        throws IOException  {
+            throws IOException, NoSuchFieldException {
         Debug.log("WRITE, offset = " + raf.getFilePointer());
         preAppend();
         /* update record conists of
@@ -218,7 +218,7 @@ public class LogFile {
         Debug.log("WRITE OFFSET = " + currentOffset);
     }
 
-    void writePageData(RandomAccessFile raf, Page p) throws IOException{
+    void writePageData(RandomAccessFile raf, Page p) throws IOException, NoSuchFieldException {
         PageId pid = p.getId();
         int pageInfo[] = pid.serialize();
 
@@ -404,7 +404,6 @@ public class LogFile {
                 long newStart = logNew.getFilePointer();
 
                 Debug.log("NEW START = " + newStart);
-
                 logNew.writeInt(type);
                 logNew.writeLong(record_tid);
 
@@ -435,7 +434,7 @@ public class LogFile {
                 logNew.writeLong(newStart);
                 raf.readLong();
 
-            } catch (EOFException e) {
+            } catch (EOFException | NoSuchFieldException e) {
                 break;
             }
         }

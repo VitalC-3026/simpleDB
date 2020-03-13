@@ -23,7 +23,7 @@ public class TestUtil {
      * @throws DbException if we encounter an error creating the
      *   TupleIterator
      */
-    public static TupleIterator createTupleList(int width, int[] tupdata) {
+    public static TupleIterator createTupleList(int width, int[] tupdata) throws NoSuchFieldException {
         int i = 0;
         ArrayList<Tuple> tuplist = new ArrayList<Tuple>();
         while (i < tupdata.length) {
@@ -48,7 +48,7 @@ public class TestUtil {
      * @throws DbException if we encounter an error creating the
      *   TupleIterator
      */
-    public static TupleIterator createTupleList(int width, Object[] tupdata) {
+    public static TupleIterator createTupleList(int width, Object[] tupdata) throws NoSuchFieldException {
         ArrayList<Tuple> tuplist = new ArrayList<Tuple>();
         TupleDesc td;
         Type[] types = new Type[width];
@@ -87,7 +87,7 @@ public class TestUtil {
      * @return true iff the tuples have the same number of fields and
      *   corresponding fields in the two Tuples are all equal.
      */
-    public static boolean compareTuples(Tuple t1, Tuple t2) {
+    public static boolean compareTuples(Tuple t1, Tuple t2) throws NoSuchFieldException {
         if (t1.getTupleDesc().numFields() != t2.getTupleDesc().numFields())
             return false;
 
@@ -107,7 +107,7 @@ public class TestUtil {
      * If not, throw an assertion.
      */
     public static void compareDbIterators(OpIterator expected, OpIterator actual)
-            throws DbException, TransactionAbortedException {
+            throws DbException, TransactionAbortedException, NoSuchFieldException {
         while (expected.hasNext()) {
             assertTrue(actual.hasNext());
 
@@ -126,7 +126,7 @@ public class TestUtil {
      * If not, throw an assertion.
      */
     public static void matchAllTuples(OpIterator expected, OpIterator actual) throws
-            DbException, TransactionAbortedException {
+            DbException, TransactionAbortedException, NoSuchFieldException {
         // TODO(ghuo): this n^2 set comparison is kind of dumb, but we haven't
         // implemented hashCode or equals for tuples.
         boolean matched = false;
@@ -153,7 +153,7 @@ public class TestUtil {
      * Verifies that the OpIterator has been exhausted of all elements.
      */
     public static boolean checkExhausted(OpIterator it)
-        throws TransactionAbortedException, DbException {
+            throws TransactionAbortedException, DbException, NoSuchFieldException {
 
         if (it.hasNext()) return false;
 
@@ -161,7 +161,7 @@ public class TestUtil {
             Tuple t = it.next();
             System.out.println("Got unexpected tuple: " + t);
             return false;
-        } catch (NoSuchElementException e) {
+        } catch (NoSuchElementException | NoSuchFieldException e) {
             return true;
         }
     }
@@ -274,7 +274,7 @@ public class TestUtil {
             return Utility.getTupleDesc(width);
         }
 
-        protected Tuple readNext() {
+        protected Tuple readNext() throws NoSuchFieldException {
             if (cur >= high) return null;
 
             Tuple tup = new Tuple(getTupleDesc());
@@ -289,7 +289,7 @@ public class TestUtil {
 			return true;
 		}
 
-		public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException {
+		public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException, NoSuchFieldException {
 			if(cur >= high) throw new NoSuchElementException();
             Tuple tup = new Tuple(getTupleDesc());
             for (int i = 0; i < width; ++i)

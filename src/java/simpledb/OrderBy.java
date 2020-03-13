@@ -54,7 +54,7 @@ public class OrderBy extends Operator {
     }
 
     public void open() throws DbException, NoSuchElementException,
-            TransactionAbortedException {
+            TransactionAbortedException, NoSuchFieldException {
         child.open();
         // load all the tuples in a collection, and sort it
         while (child.hasNext())
@@ -110,8 +110,14 @@ class TupleComparator implements Comparator<Tuple> {
     }
 
     public int compare(Tuple o1, Tuple o2) {
-        Field t1 = (o1).getField(field);
-        Field t2 = (o2).getField(field);
+        Field t1 = null;
+        Field t2 = null;
+        try {
+            t1 = (o1).getField(field);
+            t2 = (o2).getField(field);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
         if (t1.compare(Predicate.Op.EQUALS, t2))
             return 0;
         if (t1.compare(Predicate.Op.GREATER_THAN, t2))

@@ -12,7 +12,7 @@ public class PredicateTest extends SimpleDbTestBase{
   /**
    * Unit test for Predicate.filter()
    */
-  @Test public void filter() {
+  @Test public void filter() throws NoSuchFieldException {
     int[] vals = new int[] { -1, 0, 1 };
 
     for (int i : vals) {

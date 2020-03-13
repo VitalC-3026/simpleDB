@@ -41,7 +41,7 @@ public class EvictionTest extends SimpleDbTestBase {
     }
 
     public static void insertRow(HeapFile f, Transaction t) throws DbException,
-            TransactionAbortedException {
+            TransactionAbortedException, NoSuchFieldException {
         // Create a row to insert
         TupleDesc twoIntColumns = Utility.getTupleDesc(2);
         Tuple value = new Tuple(twoIntColumns);
@@ -60,7 +60,7 @@ public class EvictionTest extends SimpleDbTestBase {
     }
 
     public static boolean findMagicTuple(HeapFile f, Transaction t)
-            throws DbException, TransactionAbortedException {
+            throws DbException, TransactionAbortedException, NoSuchFieldException {
         SeqScan ss = new SeqScan(t.getId(), f.getId(), "");
         boolean found = false;
         ss.open();

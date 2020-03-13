@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.text.ParseException;
 import java.util.*;
 import java.io.*;
 
@@ -19,7 +20,7 @@ public class BTreeLeafPage extends BTreePage {
 	private int leftSibling; // leaf node or 0
 	private int rightSibling; // leaf node or 0
 
-	public void checkRep(int fieldid, Field lowerBound, Field upperBound, boolean checkoccupancy, int depth) {
+	public void checkRep(int fieldid, Field lowerBound, Field upperBound, boolean checkoccupancy, int depth) throws NoSuchFieldException {
 		Field prev = lowerBound;
 		assert(this.getId().pgcateg() == BTreePageId.LEAF);
 
@@ -61,7 +62,7 @@ public class BTreeLeafPage extends BTreePage {
 	 * @param data - the raw data of this page
 	 * @param key - the field which the index is keyed on
 	 */
-	public BTreeLeafPage(BTreePageId id, byte[] data, int key) throws IOException {
+	public BTreeLeafPage(BTreePageId id, byte[] data, int key) throws IOException, NoSuchFieldException {
 		super(id, key);
 		this.numSlots = getMaxTuples();
 		DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
@@ -138,7 +139,7 @@ public class BTreeLeafPage extends BTreePage {
 				oldDataRef = oldData;
 			}
 			return new BTreeLeafPage(pid,oldDataRef,keyField);
-		} catch (IOException e) {
+		} catch (IOException | NoSuchFieldException e) {
 			e.printStackTrace();
 			//should never happen -- we parsed it OK before!
 			System.exit(1);
@@ -146,7 +147,7 @@ public class BTreeLeafPage extends BTreePage {
 		return null;
 	}
 
-	public void setBeforeImage() {
+	public void setBeforeImage() throws NoSuchFieldException {
 		synchronized(oldDataLock)
 		{
 			oldData = getPageData().clone();
@@ -179,7 +180,7 @@ public class BTreeLeafPage extends BTreePage {
 				Field f = td.getFieldType(j).parse(dis);
 				t.setField(j, f);
 			}
-		} catch (java.text.ParseException e) {
+		} catch (ParseException | NoSuchFieldException e) {
 			e.printStackTrace();
 			throw new NoSuchElementException("parsing error!");
 		}
@@ -198,7 +199,7 @@ public class BTreeLeafPage extends BTreePage {
 	 * @see #BTreeLeafPage
 	 * @return A byte array corresponding to the bytes of this page.
 	 */
-	public byte[] getPageData() {
+	public byte[] getPageData() throws NoSuchFieldException {
 		int len = BufferPool.getPageSize();
 		ByteArrayOutputStream baos = new ByteArrayOutputStream(len);
 		DataOutputStream dos = new DataOutputStream(baos);
@@ -306,7 +307,7 @@ public class BTreeLeafPage extends BTreePage {
 	 *         is mismatch.
 	 * @param t The tuple to add.
 	 */
-	public void insertTuple(Tuple t) throws DbException {
+	public void insertTuple(Tuple t) throws DbException, NoSuchFieldException {
 		if (!t.getTupleDesc().equals(td))
 			throw new DbException("type mismatch, in addTuple");
 

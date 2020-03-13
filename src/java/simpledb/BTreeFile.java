@@ -125,7 +125,7 @@ public class BTreeFile implements DbFile {
 					return p;
 				}
 			}
-		} catch (IOException e) {
+		} catch (IOException | NoSuchFieldException e) {
 			throw new RuntimeException(e);
 		} finally {
 			// Close the file on success or error
@@ -144,7 +144,7 @@ public class BTreeFile implements DbFile {
 	 * 
 	 * @param page - the page to write to disk
 	 */
-	public void writePage(Page page) throws IOException {
+	public void writePage(Page page) throws IOException, NoSuchFieldException {
 		BTreePageId id = (BTreePageId) page.getId();
 		
 		byte[] data = page.getPageData();
@@ -434,7 +434,7 @@ public class BTreeFile implements DbFile {
 	 * @see #splitLeafPage(TransactionId, HashMap, BTreeLeafPage, Field)
 	 */
 	public ArrayList<Page> insertTuple(TransactionId tid, Tuple t)
-			throws DbException, IOException, TransactionAbortedException {
+			throws DbException, IOException, TransactionAbortedException, NoSuchFieldException {
 		HashMap<PageId, Page> dirtypages = new HashMap<PageId, Page>();
 
 		// get a read lock on the root pointer page and use it to locate the root page
@@ -1202,7 +1202,7 @@ class BTreeSearchIterator extends AbstractDbFileIterator {
 	 */
 	@Override
 	protected Tuple readNext() throws TransactionAbortedException, DbException,
-	NoSuchElementException {
+			NoSuchElementException, NoSuchFieldException {
 		while (it != null) {
 
 			while (it.hasNext()) {

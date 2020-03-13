@@ -1,8 +1,10 @@
 package simpledb;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Tuple maintains information about the contents of a tuple. Tuples have a
@@ -12,7 +14,9 @@ import java.util.Iterator;
 public class Tuple implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
+    private TupleDesc schema;
+    private RecordId recordId;
+    private List<Field> fieldList;
     /**
      * Create a new tuple with the specified schema (type).
      *
@@ -22,6 +26,7 @@ public class Tuple implements Serializable {
      */
     public Tuple(TupleDesc td) {
         // some code goes here
+        schema = td;
     }
 
     /**
@@ -29,7 +34,7 @@ public class Tuple implements Serializable {
      */
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+        return schema;
     }
 
     /**
@@ -38,7 +43,7 @@ public class Tuple implements Serializable {
      */
     public RecordId getRecordId() {
         // some code goes here
-        return null;
+        return recordId;
     }
 
     /**
@@ -49,6 +54,7 @@ public class Tuple implements Serializable {
      */
     public void setRecordId(RecordId rid) {
         // some code goes here
+        recordId = rid;
     }
 
     /**
@@ -59,8 +65,21 @@ public class Tuple implements Serializable {
      * @param f
      *            new value for the field.
      */
-    public void setField(int i, Field f) {
+    public void setField(int i, Field f) throws NoSuchFieldException {
         // some code goes here
+        if (fieldList == null) {
+            fieldList = new ArrayList<>();
+            fieldList.add(f);
+            return ;
+        }
+        if (i < 0) {
+            throw new NoSuchFieldException();
+        }
+        if (i >= fieldList.size()) {
+            fieldList.add(i, f);
+            return;
+        }
+        fieldList.set(i, f);
     }
 
     /**
@@ -69,9 +88,12 @@ public class Tuple implements Serializable {
      * @param i
      *            field index to return. Must be a valid index.
      */
-    public Field getField(int i) {
+    public Field getField(int i) throws NoSuchFieldException {
         // some code goes here
-        return null;
+        if (i >= fieldList.size() || i < 0) {
+            throw new NoSuchFieldException();
+        }
+        return fieldList.get(i);
     }
 
     /**
@@ -84,7 +106,13 @@ public class Tuple implements Serializable {
      */
     public String toString() {
         // some code goes here
-        throw new UnsupportedOperationException("Implement this");
+        // throw new UnsupportedOperationException("Implement this");
+        String toString = "";
+        for (int i = 0; i < fieldList.size(); i++) {
+            toString += fieldList.get(i).toString() + " ";
+        }
+        toString = toString.trim();
+        return toString;
     }
 
     /**
@@ -102,6 +130,7 @@ public class Tuple implements Serializable {
      * */
     public void resetTupleDesc(TupleDesc td)
     {
+        schema = td;
         // some code goes here
     }
 }

@@ -44,7 +44,7 @@ public interface Page {
    * @return A byte array correspond to the bytes of this page.
    */
 
-    public byte[] getPageData();
+    public byte[] getPageData() throws NoSuchFieldException;
 
     /** Provide a representation of this page before any modifications were made
         to it.  Used by recovery.
@@ -55,5 +55,5 @@ public interface Page {
      * a transaction that wrote this page just committed it.
      * copy current content to the before image.
      */
-    public void setBeforeImage();
+    public void setBeforeImage() throws NoSuchFieldException;
 }

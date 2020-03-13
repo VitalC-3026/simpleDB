@@ -95,6 +95,8 @@ public class BTreeFileEncoder {
 		} catch(IOException e) {
 			e.printStackTrace();
 			return bf;
+		} catch (NoSuchFieldException e) {
+			e.printStackTrace();
 		}
 
 		try {
@@ -129,11 +131,15 @@ public class BTreeFileEncoder {
 		 */
 		public int compare(Tuple t1, Tuple t2) {
 			int cmp = 0;
-			if(t1.getField(keyField).compare(Op.LESS_THAN, t2.getField(keyField))) {
-				cmp = -1;
-			}
-			else if(t1.getField(keyField).compare(Op.GREATER_THAN, t2.getField(keyField))) {
-				cmp = 1;
+			try {
+				if(t1.getField(keyField).compare(Op.LESS_THAN, t2.getField(keyField))) {
+					cmp = -1;
+				}
+				else if(t1.getField(keyField).compare(Op.GREATER_THAN, t2.getField(keyField))) {
+					cmp = 1;
+				}
+			} catch (NoSuchFieldException e) {
+				e.printStackTrace();
 			}
 			return cmp;
 		}
@@ -154,8 +160,8 @@ public class BTreeFileEncoder {
 	 */
 	public static BTreeFile convert(ArrayList<ArrayList<Integer>> tuples, File hFile, 
 			File bFile, int npagebytes,
-			int numFields, Type[] typeAr, char fieldSeparator, int keyField) 
-					throws IOException, DbException, TransactionAbortedException {
+			int numFields, Type[] typeAr, char fieldSeparator, int keyField)
+			throws IOException, DbException, TransactionAbortedException, NoSuchFieldException {
 		File tempInput = File.createTempFile("tempTable", ".txt");
 		tempInput.deleteOnExit();
 		BufferedWriter bw = new BufferedWriter(new FileWriter(tempInput));
@@ -197,8 +203,8 @@ public class BTreeFileEncoder {
 	 * @throws TransactionAbortedException
 	 */
 	public static BTreeFile convert(File inFile, File hFile, File bFile, int npagebytes,
-			int numFields, Type[] typeAr, char fieldSeparator, int keyField) 
-					throws IOException, DbException, TransactionAbortedException {
+			int numFields, Type[] typeAr, char fieldSeparator, int keyField)
+			throws IOException, DbException, TransactionAbortedException, NoSuchFieldException {
 		// convert the inFile to HeapFile first.
 		HeapFileEncoder.convert(inFile, hFile, BufferPool.getPageSize(), numFields);
 		HeapFile heapf = Utility.openHeapFile(numFields, hFile);
@@ -344,8 +350,8 @@ public class BTreeFileEncoder {
 	 * @throws IOException
 	 * @throws DbException
 	 */
-	private static void setRightSiblingPtrs(BTreeFile bf, BTreePageId pid, BTreePageId rightSiblingId) 
-			throws IOException, DbException {
+	private static void setRightSiblingPtrs(BTreeFile bf, BTreePageId pid, BTreePageId rightSiblingId)
+			throws IOException, DbException, NoSuchFieldException {
 		BTreeLeafPage page = (BTreeLeafPage) bf.readPage(pid);
 		page.setRightSiblingId(rightSiblingId);
 		BTreePageId leftSiblingId = page.getLeftSiblingId();
@@ -364,8 +370,8 @@ public class BTreeFileEncoder {
 	 * @throws IOException
 	 * @throws DbException
 	 */
-	private static void setParents(BTreeFile bf, BTreePageId pid, BTreePageId parent) 
-			throws IOException, DbException {
+	private static void setParents(BTreeFile bf, BTreePageId pid, BTreePageId parent)
+			throws IOException, DbException, NoSuchFieldException {
 		if(pid.pgcateg() == BTreePageId.INTERNAL) {
 			BTreeInternalPage page = (BTreeInternalPage) bf.readPage(pid);
 			page.setParentId(parent);
@@ -402,7 +408,7 @@ public class BTreeFileEncoder {
 	 */
 	private static void cleanUpEntries(ArrayList<ArrayList<BTreeEntry>> entries,
 			BTreeFile bf, int nentries, int npagebytes, Type keyType, int tableid, 
-			int keyField) throws IOException {
+			int keyField) throws IOException, NoSuchFieldException {
 		// As with the leaf pages, there are two options:
 		// 1. We have less than or equal to a full page of entries. Because of the way the code
 		//    was written, we know this must be the root page
@@ -460,7 +466,7 @@ public class BTreeFileEncoder {
 	 */
 	private static void updateEntries(ArrayList<ArrayList<BTreeEntry>> entries, 
 			BTreeFile bf, BTreeEntry e, int level, int nentries, int npagebytes, Type keyType, 
-			int tableid, int keyField) throws IOException {
+			int tableid, int keyField) throws IOException, NoSuchFieldException {
 		while(entries.size() <= level) {
 			entries.add(new ArrayList<BTreeEntry>());
 		}
@@ -505,7 +511,7 @@ public class BTreeFileEncoder {
 	 */
 	public static byte[] convertToLeafPage(ArrayList<Tuple> tuples, int npagebytes,
 			int numFields, Type[] typeAr, int keyField)
-					throws IOException {
+			throws IOException, NoSuchFieldException {
 		int nrecbytes = 0;
 		for (int i = 0; i < numFields ; i++) {
 			nrecbytes += typeAr[i].getLen();

@@ -85,7 +85,7 @@ public class SystemTestUtil {
         return temp;
     }
 
-    public static ArrayList<Integer> tupleToList(Tuple tuple) {
+    public static ArrayList<Integer> tupleToList(Tuple tuple) throws NoSuchFieldException {
         ArrayList<Integer> list = new ArrayList<Integer>();
         for (int i = 0; i < tuple.getTupleDesc().numFields(); ++i) {
             int value = ((IntField)tuple.getField(i)).getValue();
@@ -95,20 +95,20 @@ public class SystemTestUtil {
     }
 
     public static void matchTuples(DbFile f, List<ArrayList<Integer>> tuples)
-            throws DbException, TransactionAbortedException, IOException {
+            throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
         TransactionId tid = new TransactionId();
         matchTuples(f, tid, tuples);
         Database.getBufferPool().transactionComplete(tid);
     }
 
     public static void matchTuples(DbFile f, TransactionId tid, List<ArrayList<Integer>> tuples)
-            throws DbException, TransactionAbortedException, IOException {
+            throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
         SeqScan scan = new SeqScan(tid, f.getId(), "");
         matchTuples(scan, tuples);
     }
 
     public static void matchTuples(OpIterator iterator, List<ArrayList<Integer>> tuples)
-            throws DbException, TransactionAbortedException, IOException {
+            throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
         ArrayList<ArrayList<Integer>> copy = new ArrayList<ArrayList<Integer>>(tuples);
 
         if (Debug.isEnabled()) {

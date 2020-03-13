@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.text.ParseException;
 import java.util.*;
 import java.io.*;
 
@@ -38,7 +39,7 @@ public class HeapPage implements Page {
      * @see Catalog#getTupleDesc
      * @see BufferPool#getPageSize()
      */
-    public HeapPage(HeapPageId id, byte[] data) throws IOException {
+    public HeapPage(HeapPageId id, byte[] data) throws IOException, NoSuchFieldException {
         this.pid = id;
         this.td = Database.getCatalog().getTupleDesc(id.getTableId());
         this.numSlots = getNumTuples();
@@ -92,7 +93,7 @@ public class HeapPage implements Page {
                 oldDataRef = oldData;
             }
             return new HeapPage(pid,oldDataRef);
-        } catch (IOException e) {
+        } catch (IOException | NoSuchFieldException e) {
             e.printStackTrace();
             //should never happen -- we parsed it OK before!
             System.exit(1);
@@ -100,7 +101,7 @@ public class HeapPage implements Page {
         return null;
     }
     
-    public void setBeforeImage() {
+    public void setBeforeImage() throws NoSuchFieldException {
         synchronized(oldDataLock)
         {
         oldData = getPageData().clone();
@@ -141,7 +142,7 @@ public class HeapPage implements Page {
                 Field f = td.getFieldType(j).parse(dis);
                 t.setField(j, f);
             }
-        } catch (java.text.ParseException e) {
+        } catch (ParseException | NoSuchFieldException e) {
             e.printStackTrace();
             throw new NoSuchElementException("parsing error!");
         }
@@ -160,7 +161,7 @@ public class HeapPage implements Page {
      * @see #HeapPage
      * @return A byte array correspond to the bytes of this page.
      */
-    public byte[] getPageData() {
+    public byte[] getPageData() throws NoSuchFieldException {
         int len = BufferPool.getPageSize();
         ByteArrayOutputStream baos = new ByteArrayOutputStream(len);
         DataOutputStream dos = new DataOutputStream(baos);

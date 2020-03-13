@@ -46,7 +46,7 @@ public class Utility {
      * @return a Tuple with a single IntField with value n and with
      *   RecordId(HeapPageId(1,2), 3)
      */
-    public static Tuple getHeapTuple(int n) {
+    public static Tuple getHeapTuple(int n) throws NoSuchFieldException {
         Tuple tup = new Tuple(getTupleDesc(1));
         tup.setRecordId(new RecordId(new HeapPageId(1, 2), 3));
         tup.setField(0, new IntField(n));
@@ -57,7 +57,7 @@ public class Utility {
      * @return a Tuple with an IntField for every element of tupdata
      *   and RecordId(HeapPageId(1, 2), 3)
      */
-    public static Tuple getHeapTuple(int[] tupdata) {
+    public static Tuple getHeapTuple(int[] tupdata) throws NoSuchFieldException {
         Tuple tup = new Tuple(getTupleDesc(tupdata.length));
         tup.setRecordId(new RecordId(new HeapPageId(1, 2), 3));
         for (int i = 0; i < tupdata.length; ++i)
@@ -69,7 +69,7 @@ public class Utility {
      * @return a Tuple with a 'width' IntFields each with value n and
      *   with RecordId(HeapPageId(1, 2), 3)
      */
-    public static Tuple getHeapTuple(int n, int width) {
+    public static Tuple getHeapTuple(int n, int width) throws NoSuchFieldException {
         Tuple tup = new Tuple(getTupleDesc(width));
         tup.setRecordId(new RecordId(new HeapPageId(1, 2), 3));
         for (int i = 0; i < width; ++i)
@@ -83,7 +83,7 @@ public class Utility {
      *         do not set it's RecordId, hence do not distinguish which
      *         sort of file it belongs to.
      */
-    public static Tuple getTuple(int[] tupledata, int width) {
+    public static Tuple getTuple(int[] tupledata, int width) throws NoSuchFieldException {
         if(tupledata.length != width) {
             System.out.println("get Hash Tuple has the wrong length~");
             System.exit(1);
@@ -114,7 +114,7 @@ public class Utility {
         HeapPage page = null;
         try {
             page = new HeapPage(pid, HeapPage.createEmptyPageData());
-        } catch (IOException e) {
+        } catch (IOException | NoSuchFieldException e) {
             // this should never happen for an empty page; bail;
             throw new RuntimeException("failed to create empty page in HeapFile");
         }
