@@ -68,18 +68,17 @@ public class HeapPage implements Page {
     */
     private int getNumTuples() {        
         // some code goes here
-        return 0;
-
+        return (int) Math.floor((double)(BufferPool.getPageSize()*8)/(td.getSize()*8+1));
     }
 
     /**
      * Computes the number of bytes in the header of a page in a HeapFile with each tuple occupying tupleSize bytes
      * @return the number of bytes in the header of a page in a HeapFile with each tuple occupying tupleSize bytes
      */
-    private int getHeaderSize() {        
-        
+    private int getHeaderSize() {
         // some code goes here
-        return 0;
+        int numTuple = this.getNumTuples();
+        return (int) Math.ceil((double)numTuple/8);
                  
     }
     
@@ -104,7 +103,7 @@ public class HeapPage implements Page {
     public void setBeforeImage() throws NoSuchFieldException {
         synchronized(oldDataLock)
         {
-        oldData = getPageData().clone();
+            oldData = getPageData().clone();
         }
     }
 
@@ -112,8 +111,9 @@ public class HeapPage implements Page {
      * @return the PageId associated with this page.
      */
     public HeapPageId getId() {
-    // some code goes here
-    throw new UnsupportedOperationException("implement this");
+        // some code goes here
+        // throw new UnsupportedOperationException("implement this");
+        return this.pid;
     }
 
     /**
@@ -266,7 +266,7 @@ public class HeapPage implements Page {
      */
     public void markDirty(boolean dirty, TransactionId tid) {
         // some code goes here
-	// not necessary for lab1
+	    // not necessary for lab1
     }
 
     /**
@@ -274,7 +274,7 @@ public class HeapPage implements Page {
      */
     public TransactionId isDirty() {
         // some code goes here
-	// Not necessary for lab1
+	    // Not necessary for lab1
         return null;      
     }
 
@@ -283,7 +283,28 @@ public class HeapPage implements Page {
      */
     public int getNumEmptySlots() {
         // some code goes here
-        return 0;
+        /*int numUsedSlots = 0;
+        for (int i = 0; i < getHeaderSize() - 1; i++) {
+            for(int j = 0; j < 8; j++){
+                // System.out.println((byte) header[i]);
+                if((((byte)(header[i]>>j) & 1) == 1)){
+                    numUsedSlots++;
+                }
+            }
+        }
+        int used = getNumTuples() % 8;
+        for (int i = 0; i < used; i++) {
+            if(((header[getHeaderSize()-1]>>i) & 1) == 1) {
+                numUsedSlots++;
+            }
+        }*/
+        int numUsedSlots = 0;
+        for (int i = 0; i < numSlots; i++) {
+            if(isSlotUsed(i)){
+                numUsedSlots++;
+            }
+        }
+        return numSlots-numUsedSlots;
     }
 
     /**
@@ -291,6 +312,12 @@ public class HeapPage implements Page {
      */
     public boolean isSlotUsed(int i) {
         // some code goes here
+        int headerGroup = i / 8;
+        int location = i % 8;
+        byte slotInfo = header[headerGroup];
+        if (((slotInfo >> location) & 1) == 1) {
+            return true;
+        }
         return false;
     }
 
@@ -308,7 +335,16 @@ public class HeapPage implements Page {
      */
     public Iterator<Tuple> iterator() {
         // some code goes here
-        return null;
+        List<Tuple> tupleSet = new LinkedList<>();
+        for (int i = 0; i < tuples.length; i++) {
+            if(isSlotUsed(i)){
+                tupleSet.add(tuples[i]);
+            }
+        }
+        if(tupleSet.size() == 0) {
+            throw new UnsupportedOperationException();
+        }
+        return tupleSet.iterator();
     }
 
 }
