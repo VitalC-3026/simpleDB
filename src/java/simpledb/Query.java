@@ -62,7 +62,7 @@ public class Query implements Serializable {
     }
 
     /** @return true if there are more tuples remaining. */
-    public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException {
+    public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
         return op.hasNext();
     }
 
@@ -79,7 +79,7 @@ public class Query implements Serializable {
      *             If the transaction is aborted (e.g., due to a deadlock)
      */
     public Tuple next() throws DbException, NoSuchElementException,
-            TransactionAbortedException, NoSuchFieldException {
+            TransactionAbortedException, NoSuchFieldException, IOException {
         if (!started)
             throw new DbException("Database not started.");
 

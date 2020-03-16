@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.io.IOException;
 import java.util.NoSuchElementException;
 
 /**
@@ -11,7 +12,7 @@ public abstract class Operator implements OpIterator {
 
     private static final long serialVersionUID = 1L;
 
-    public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException {
+    public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
         if (!this.open)
             throw new IllegalStateException("Operator not yet open");
         
@@ -21,7 +22,7 @@ public abstract class Operator implements OpIterator {
     }
 
     public Tuple next() throws DbException, TransactionAbortedException,
-            NoSuchElementException, NoSuchFieldException {
+            NoSuchElementException, NoSuchFieldException, IOException {
         if (next == null) {
             next = fetchNext();
             if (next == null)
@@ -42,7 +43,7 @@ public abstract class Operator implements OpIterator {
      *         finished.
      */
     protected abstract Tuple fetchNext() throws DbException,
-            TransactionAbortedException, NoSuchFieldException;
+            TransactionAbortedException, NoSuchFieldException, IOException;
 
     /**
      * Closes this iterator. If overridden by a subclass, they should call
@@ -58,7 +59,7 @@ public abstract class Operator implements OpIterator {
     private boolean open = false;
     private int estimatedCardinality = 0;
 
-    public void open() throws DbException, TransactionAbortedException, NoSuchFieldException {
+    public void open() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
         this.open = true;
     }
 

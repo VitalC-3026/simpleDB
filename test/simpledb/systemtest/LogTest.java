@@ -19,7 +19,7 @@ public class LogTest extends SimpleDbTestBase {
     HeapFile hf2;
 
     void insertRow(HeapFile hf, Transaction t, int v1, int v2)
-            throws DbException, TransactionAbortedException, NoSuchFieldException {
+            throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
         // Create a row to insert
         TupleDesc twoIntColumns = Utility.getTupleDesc(2);
         Tuple value = new Tuple(twoIntColumns);

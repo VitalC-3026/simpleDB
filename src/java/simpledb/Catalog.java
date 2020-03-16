@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The Catalog keeps track of all available tables in the database and their
@@ -148,7 +147,11 @@ public class Catalog {
 
     public Iterator<Integer> tableIdIterator() {
         // some code goes here
-        return null;
+        List<Integer> tableIds = new ArrayList<Integer>();
+        for(Table table : catalog) {
+            tableIds.add(table.tableId);
+        }
+        return tableIds.iterator();
     }
 
     public String getTableName(int id) {

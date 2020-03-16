@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -37,7 +38,7 @@ public class BTreeScan implements OpIterator {
 	 * 			  The index predicate to match. If null, the scan will return all tuples
 	 *            in sorted order
 	 */
-	public BTreeScan(TransactionId tid, int tableid, String tableAlias, IndexPredicate ipred) {
+	public BTreeScan(TransactionId tid, int tableid, String tableAlias, IndexPredicate ipred) throws TransactionAbortedException, NoSuchFieldException, DbException, IOException {
 		this.tid = tid;
 		this.ipred = ipred;
 		reset(tableid,tableAlias);
@@ -72,7 +73,7 @@ public class BTreeScan implements OpIterator {
 	 *            are, but the resulting name can be null.fieldName,
 	 *            tableAlias.null, or null.null).
 	 */
-	public void reset(int tableid, String tableAlias) {
+	public void reset(int tableid, String tableAlias) throws TransactionAbortedException, IOException, DbException, NoSuchFieldException {
 		this.isOpen=false;
 		this.alias = tableAlias;
 		this.tablename = Database.getCatalog().getTableName(tableid);
@@ -95,11 +96,11 @@ public class BTreeScan implements OpIterator {
 		myTd = new TupleDesc(newTypes, newNames);
 	}
 
-	public BTreeScan(TransactionId tid, int tableid, IndexPredicate ipred) {
+	public BTreeScan(TransactionId tid, int tableid, IndexPredicate ipred) throws TransactionAbortedException, IOException, DbException, NoSuchFieldException {
 		this(tid, tableid, Database.getCatalog().getTableName(tableid), ipred);
 	}
 
-	public void open() throws DbException, TransactionAbortedException {
+	public void open() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
 		if (isOpen)
 			throw new DbException("double open on one OpIterator.");
 
@@ -120,14 +121,14 @@ public class BTreeScan implements OpIterator {
 		return myTd;
 	}
 
-	public boolean hasNext() throws TransactionAbortedException, DbException, NoSuchFieldException {
+	public boolean hasNext() throws TransactionAbortedException, DbException, NoSuchFieldException, IOException {
 		if (!isOpen)
 			throw new IllegalStateException("iterator is closed");
 		return it.hasNext();
 	}
 
 	public Tuple next() throws NoSuchElementException,
-			TransactionAbortedException, DbException, NoSuchFieldException {
+			TransactionAbortedException, DbException, NoSuchFieldException, IOException {
 		if (!isOpen)
 			throw new IllegalStateException("iterator is closed");
 
@@ -140,7 +141,7 @@ public class BTreeScan implements OpIterator {
 	}
 
 	public void rewind() throws DbException, NoSuchElementException,
-	TransactionAbortedException {
+			TransactionAbortedException, IOException, NoSuchFieldException {
 		close();
 		open();
 	}

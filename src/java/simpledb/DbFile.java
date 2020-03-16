@@ -17,7 +17,7 @@ public interface DbFile {
      *
      * @throws IllegalArgumentException if the page does not exist in this file.
      */
-    public Page readPage(PageId id);
+    public Page readPage(PageId id) throws IllegalArgumentException, IOException, NoSuchFieldException;
 
     /**
      * Push the specified page to disk.
@@ -57,7 +57,7 @@ public interface DbFile {
      *   of the file
      */
     public ArrayList<Page> deleteTuple(TransactionId tid, Tuple t)
-        throws DbException, IOException, TransactionAbortedException;
+            throws DbException, IOException, TransactionAbortedException, NoSuchFieldException;
 
     /**
      * Returns an iterator over all the tuples stored in this DbFile. The
@@ -66,7 +66,7 @@ public interface DbFile {
      *
      * @return an iterator over all the tuples stored in this DbFile.
      */
-    public DbFileIterator iterator(TransactionId tid);
+    public DbFileIterator iterator(TransactionId tid) throws TransactionAbortedException, NoSuchFieldException, DbException, IOException;
 
     /**
      * Returns a unique ID used to identify this DbFile in the Catalog. This id

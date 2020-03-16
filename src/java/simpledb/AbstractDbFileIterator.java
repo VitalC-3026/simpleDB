@@ -1,17 +1,18 @@
 package simpledb;
 
+import java.io.IOException;
 import java.util.NoSuchElementException;
 
 /** Helper for implementing DbFileIterators. Handles hasNext()/next() logic. */
 public abstract class AbstractDbFileIterator implements DbFileIterator {
 
-	public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException {
+	public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
         if (next == null) next = readNext();
         return next != null;
     }
 
     public Tuple next() throws DbException, TransactionAbortedException,
-            NoSuchElementException, NoSuchFieldException {
+            NoSuchElementException, NoSuchFieldException, IOException {
         if (next == null) {
             next = readNext();
             if (next == null) throw new NoSuchElementException();
@@ -30,7 +31,7 @@ public abstract class AbstractDbFileIterator implements DbFileIterator {
 
     /** Reads the next tuple from the underlying source.
     @return the next Tuple in the iterator, null if the iteration is finished. */
-    protected abstract Tuple readNext() throws DbException, TransactionAbortedException, NoSuchFieldException;
+    protected abstract Tuple readNext() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException;
 
     private Tuple next = null;
 }

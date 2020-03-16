@@ -29,7 +29,7 @@ public class BufferPool {
     private int numPages = DEFAULT_PAGES;
     private LinkedList<Page> bufferPool;
 
-    private DbFile dbFile;
+    private HeapFile heapFile;
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -72,7 +72,7 @@ public class BufferPool {
      * @param perm the requested permissions on the page
      */
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
-        throws TransactionAbortedException, DbException {
+            throws IOException, NoSuchFieldException {
         // some code goes here
         if (bufferPool.size() < numPages ) {
             for (Page page: bufferPool) {
@@ -81,13 +81,13 @@ public class BufferPool {
                 }
             }
             // get the Page from where?
-            Page newPage = dbFile.readPage(pid);
+            Page newPage = heapFile.readPage(pid);
             bufferPool.add(newPage);
             return newPage;
         } else {
             // eviction function ×implemented
             bufferPool.remove(1);
-            bufferPool.add(dbFile.readPage(pid));
+            bufferPool.add(heapFile.readPage(pid));
         }
 
         return null;

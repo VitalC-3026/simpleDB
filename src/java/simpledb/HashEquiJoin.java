@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -53,7 +54,7 @@ public class HashEquiJoin extends Operator {
     HashMap<Object, ArrayList<Tuple>> map = new HashMap<Object, ArrayList<Tuple>>();
     public final static int MAP_SIZE = 20000;
 
-    private boolean loadMap() throws DbException, TransactionAbortedException, NoSuchFieldException {
+    private boolean loadMap() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
         int cnt = 0;
         map.clear();
         while (child1.hasNext()) {
@@ -72,7 +73,7 @@ public class HashEquiJoin extends Operator {
     }
 
     public void open() throws DbException, NoSuchElementException,
-            TransactionAbortedException, NoSuchFieldException {
+            TransactionAbortedException, NoSuchFieldException, IOException {
         child1.open();
         child2.open();
         loadMap();
@@ -89,7 +90,7 @@ public class HashEquiJoin extends Operator {
         this.map.clear();
     }
 
-    public void rewind() throws DbException, TransactionAbortedException {
+    public void rewind() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
         child1.rewind();
         child2.rewind();
     }
@@ -130,7 +131,7 @@ public class HashEquiJoin extends Operator {
 
     }
 
-    protected Tuple fetchNext() throws TransactionAbortedException, DbException, NoSuchFieldException {
+    protected Tuple fetchNext() throws TransactionAbortedException, DbException, NoSuchFieldException, IOException {
         if (listIt != null && listIt.hasNext()) {
             return processList();
         }

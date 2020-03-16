@@ -74,7 +74,7 @@ public class BTreeChecker {
     static SubtreeSummary checkSubTree(BTreeFile bt, TransactionId tid, HashMap<PageId, Page> dirtypages,
                                        BTreePageId pageId, Field lowerBound, Field upperBound,
                                        BTreePageId parentId, boolean checkOccupancy, int depth) throws
-            TransactionAbortedException, DbException, NoSuchFieldException {
+            TransactionAbortedException, DbException, NoSuchFieldException, IOException {
         BTreePage page = (BTreePage )bt.getPage(tid, dirtypages, pageId, Permissions.READ_ONLY);
         assert(page.getParentId().equals(parentId));
 

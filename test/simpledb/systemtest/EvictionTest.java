@@ -41,7 +41,7 @@ public class EvictionTest extends SimpleDbTestBase {
     }
 
     public static void insertRow(HeapFile f, Transaction t) throws DbException,
-            TransactionAbortedException, NoSuchFieldException {
+            TransactionAbortedException, NoSuchFieldException, IOException {
         // Create a row to insert
         TupleDesc twoIntColumns = Utility.getTupleDesc(2);
         Tuple value = new Tuple(twoIntColumns);
