@@ -133,6 +133,6 @@ public class SeqScan implements OpIterator {
     }
 
     public Tuple fetchNext() {
-        
+        return null;
     }
 }

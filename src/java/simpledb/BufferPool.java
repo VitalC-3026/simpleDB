@@ -29,7 +29,6 @@ public class BufferPool {
     private int numPages = DEFAULT_PAGES;
     private LinkedList<Page> bufferPool;
 
-    private HeapFile heapFile;
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -81,13 +80,13 @@ public class BufferPool {
                 }
             }
             // get the Page from where?
-            Page newPage = heapFile.readPage(pid);
+            Page newPage = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
             bufferPool.add(newPage);
             return newPage;
         } else {
             // eviction function ×implemented
             bufferPool.remove(1);
-            bufferPool.add(heapFile.readPage(pid));
+            bufferPool.add(Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid));
         }
 
         return null;
