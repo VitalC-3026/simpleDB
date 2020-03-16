@@ -2,7 +2,7 @@ package simpledb;
 
 import java.io.*;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.LinkedList;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -26,6 +26,11 @@ public class BufferPool {
     constructor instead. */
     public static final int DEFAULT_PAGES = 50;
 
+    private int numPages = DEFAULT_PAGES;
+    private LinkedList<Page> bufferPool;
+
+    private DbFile dbFile;
+
     /**
      * Creates a BufferPool that caches up to numPages pages.
      *
@@ -33,6 +38,8 @@ public class BufferPool {
      */
     public BufferPool(int numPages) {
         // some code goes here
+        this.numPages = numPages;
+        this.bufferPool = new LinkedList<>();
     }
     
     public static int getPageSize() {
@@ -67,6 +74,22 @@ public class BufferPool {
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
         // some code goes here
+        if (bufferPool.size() < numPages ) {
+            for (Page page: bufferPool) {
+                if ((page).getId().equals(pid)) {
+                    return page;
+                }
+            }
+            // get the Page from where?
+            Page newPage = dbFile.readPage(pid);
+            bufferPool.add(newPage);
+            return newPage;
+        } else {
+            // eviction function ×implemented
+            bufferPool.remove(1);
+            bufferPool.add(dbFile.readPage(pid));
+        }
+
         return null;
     }
 
