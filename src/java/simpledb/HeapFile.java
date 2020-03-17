@@ -108,13 +108,78 @@ public class HeapFile implements DbFile {
     // see DbFile.java for javadocs
     public DbFileIterator iterator(TransactionId tid) throws TransactionAbortedException, NoSuchFieldException, DbException, IOException {
         // some code goes here
-        List<Page> pages = new ArrayList<>();
+        class HeapFileIterator implements DbFileIterator {
+            private List<HeapPage> pages;
+            private List<Iterator<Tuple>> tuples;
+            private Iterator<Tuple> tupleIterator = null;
+            private int i = 0;
+
+            public HeapFileIterator(List<HeapPage> pages){
+                this.pages = pages;
+            }
+
+            @Override
+            public void open() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
+                tuples = new LinkedList<>();
+                for(HeapPage page: pages){
+                    tuples.add(page.iterator());
+                }
+                tupleIterator = tuples.get(0);
+                i = 0;
+            }
+
+            @Override
+            public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
+                if (tuples == null) return false;
+                if (tupleIterator == null && i >= tuples.size()) return false;
+                if (tupleIterator == null) {
+                    tupleIterator = readNext();
+                }
+                return tupleIterator.hasNext();
+            }
+
+            private Iterator<Tuple> readNext() {
+                if(i < tuples.size()){
+                    tupleIterator = tuples.get(i);
+                } else {
+                    tupleIterator = null;
+                }
+                return tupleIterator;
+            }
+
+            @Override
+            public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException, NoSuchFieldException, IOException {
+                if (tupleIterator == null && tuples == null) throw new NoSuchElementException();
+                if (tupleIterator == null) {
+                    tupleIterator = readNext();
+                    i++;
+                }
+
+                Tuple result = tupleIterator.next();
+                return result;
+            }
+
+            @Override
+            public void rewind() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
+                tupleIterator = null;
+                i = 0;
+            }
+
+            @Override
+            public void close() {
+                tupleIterator = null;
+                tuples = null;
+                i = 0;
+            }
+        }
+
+        List<HeapPage> pages = new LinkedList<>();
         for(int i = 0; i < numPages(); i++) {
             HeapPageId heapPageId = new HeapPageId(getId(), i);
             Page page = Database.getBufferPool().getPage(tid, heapPageId, Permissions.READ_ONLY);
-            pages.add(page);
+            pages.add((HeapPage) page);
         }
-        return (DbFileIterator) pages.iterator();
+        return new HeapFileIterator(pages);
     }
 
 }

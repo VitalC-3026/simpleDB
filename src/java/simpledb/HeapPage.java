@@ -341,6 +341,7 @@ public class HeapPage implements Page {
                 tupleSet.add(tuples[i]);
             }
         }
+        System.out.println(tuples.length);
         if(tupleSet.size() == 0) {
             throw new UnsupportedOperationException();
         }
