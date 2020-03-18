@@ -39,7 +39,7 @@ public class LogTest extends SimpleDbTestBase {
 
     // check that the specified tuple is, or is not, present
     void look(HeapFile hf, Transaction t, int v1, boolean present)
-            throws DbException, TransactionAbortedException, NoSuchFieldException {
+            throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
         int count = 0;
         SeqScan scan = new SeqScan(t.getId(), hf.getId(), "");
         scan.open();

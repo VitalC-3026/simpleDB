@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -15,6 +16,7 @@ public class SeqScan implements OpIterator {
     private String tableAlias;
     private Tuple next = null;
     private boolean open = false;
+    private DbFileIterator dbFileIterator;
     /**
      * Creates a sequential scan over the specified table as a part of the
      * specified transaction.
@@ -77,8 +79,11 @@ public class SeqScan implements OpIterator {
         this(tid, tableId, Database.getCatalog().getTableName(tableId));
     }
 
-    public void open() throws DbException, TransactionAbortedException {
+    public void open() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
         // some code goes here
+        DbFile dbFile = Database.getCatalog().getDatabaseFile(tableId);
+        dbFileIterator = dbFile.iterator(tid);
+        dbFileIterator.open();
         this.open = true;
     }
 
@@ -94,24 +99,38 @@ public class SeqScan implements OpIterator {
      */
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return Database.getCatalog().getTupleDesc(tableId);
+        TupleDesc tupleDesc = Database.getCatalog().getTupleDesc(tableId);
+        List<TupleDesc.TDItem> OldTDItem = tupleDesc.getItems();
+        Type[] types = new Type[OldTDItem.size()];
+        String[] fieldNames = new String[OldTDItem.size()];
+        for(int i = 0; i < OldTDItem.size(); i++) {
+            Type type = OldTDItem.get(i).fieldType;
+            String fieldName = tableAlias + "." + OldTDItem.get(i).fieldName;
+            types[i] = type;
+            fieldNames[i] = fieldName;
+        }
+        return new TupleDesc(types, fieldNames);
     }
 
-    public boolean hasNext() throws TransactionAbortedException, DbException {
+    public boolean hasNext() throws TransactionAbortedException, DbException, NoSuchFieldException, IOException {
         // some code goes here
         if (!this.open)
             throw new IllegalStateException("Operator not yet open");
 
-        if (next == null)
-            next = fetchNext();
-        return next != null;
+        if (dbFileIterator == null)
+            return false;
+
+        return dbFileIterator.hasNext();
     }
 
     public Tuple next() throws NoSuchElementException,
-            TransactionAbortedException, DbException {
+            TransactionAbortedException, DbException, NoSuchFieldException, IOException {
         // some code goes here
-        if (next == null) {
-            next = fetchNext();
+        if (!this.open)
+            throw new IllegalStateException("Operator not yet open");
+
+        if (hasNext()) {
+            next = dbFileIterator.next();
             if (next == null)
                 throw new NoSuchElementException();
         }
@@ -130,9 +149,8 @@ public class SeqScan implements OpIterator {
     public void rewind() throws DbException, NoSuchElementException,
             TransactionAbortedException {
         // some code goes here
+        this.open = true;
+        next = null;
     }
 
-    public Tuple fetchNext() {
-        return null;
-    }
 }

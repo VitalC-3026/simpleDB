@@ -49,7 +49,7 @@ public class TupleDesc implements Serializable {
      * */
     public Iterator<TDItem> iterator() {
         // some code goes here
-        return null;
+        return items.iterator();
     }
 
     private static final long serialVersionUID = 1L;
@@ -67,7 +67,7 @@ public class TupleDesc implements Serializable {
      */
     public TupleDesc(Type[] typeAr, String[] fieldAr) {
         // create TDItem with two arrays named typeAr and fieldAr
-        items = new ArrayList<>();
+        items = new LinkedList<>();
         for (int i = 0; i<typeAr.length; i++){
             TDItem item = new TDItem(typeAr[i], fieldAr[i]);
             items.add(item);

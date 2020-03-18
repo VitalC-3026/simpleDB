@@ -122,7 +122,7 @@ public class Tuple implements Serializable {
     public Iterator<Field> fields()
     {
         // some code goes here
-        return null;
+        return fieldList.iterator();
     }
 
     /**
@@ -130,7 +130,7 @@ public class Tuple implements Serializable {
      * */
     public void resetTupleDesc(TupleDesc td)
     {
-        schema = td;
         // some code goes here
+        schema = td;
     }
 }

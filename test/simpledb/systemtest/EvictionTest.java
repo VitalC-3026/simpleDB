@@ -20,7 +20,7 @@ public class EvictionTest extends SimpleDbTestBase {
     private static final long MEMORY_LIMIT_IN_MB = 5;
     private static final int BUFFER_PAGES = 16;
 
-    @Test public void testHeapFileScanWithManyPages() throws IOException, DbException, TransactionAbortedException {
+    @Test public void testHeapFileScanWithManyPages() throws IOException, DbException, TransactionAbortedException, NoSuchFieldException {
         System.out.println("EvictionTest creating large table");
         HeapFile f = SystemTestUtil.createRandomHeapFile(2, 1024*500, null, null);
         System.out.println("EvictionTest scanning large table");
@@ -60,7 +60,7 @@ public class EvictionTest extends SimpleDbTestBase {
     }
 
     public static boolean findMagicTuple(HeapFile f, Transaction t)
-            throws DbException, TransactionAbortedException, NoSuchFieldException {
+            throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
         SeqScan ss = new SeqScan(t.getId(), f.getId(), "");
         boolean found = false;
         ss.open();
