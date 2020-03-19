@@ -14,11 +14,6 @@ public class SeqScan implements OpIterator {
     private TransactionId tid;
     private int tableId;
     private String tableAlias;
-    private Tuple next = null;
-    private boolean open = false;
-    // private HeapFile.HeapFileIterator heapFileIterator;
-    private HeapFile heapFile;
-    private TupleIterator tupleIterator;
     private DbFileIterator dbFileIterator;
     /**
      * Creates a sequential scan over the specified table as a part of the
@@ -109,17 +104,13 @@ public class SeqScan implements OpIterator {
 
     public void open() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
         // some code goes here
-        heapFile = (HeapFile) Database.getCatalog().getDatabaseFile(tableId);
-        dbFileIterator = heapFile.iterator(tid);
+        DbFile dbFile = Database.getCatalog().getDatabaseFile(tableId);
+        dbFileIterator = dbFile.iterator(tid);
         dbFileIterator.open();
-        this.open = true;
     }
 
     public boolean hasNext() throws TransactionAbortedException, DbException, NoSuchFieldException, IOException {
         // some code goes here
-        if (!this.open)
-            throw new IllegalStateException("Operator not yet open");
-
         if (dbFileIterator == null)
             return false;
 
@@ -129,31 +120,26 @@ public class SeqScan implements OpIterator {
     public Tuple next() throws NoSuchElementException,
             TransactionAbortedException, DbException, NoSuchFieldException, IOException {
         // some code goes here
-        if (!this.open)
-            throw new IllegalStateException("Operator not yet open");
-
-        if (hasNext()) {
-            next = dbFileIterator.next();
-            if (next == null)
-                throw new NoSuchElementException();
+        if (dbFileIterator == null) {
+            throw new NoSuchElementException();
         }
-
-        Tuple result = next;
-        next = null;
-        return result;
+        Tuple next = dbFileIterator.next();
+        if (next == null) {
+            throw new NoSuchElementException();
+        }
+        return next;
     }
 
     public void close() {
         // some code goes here
-        next = null;
-        this.open = false;
+        dbFileIterator = null;
     }
 
     public void rewind() throws DbException, NoSuchElementException,
-            TransactionAbortedException {
+            TransactionAbortedException, NoSuchFieldException, IOException {
         // some code goes here
-        this.open = true;
-        next = null;
+        close();
+        open();
     }
 
 }
