@@ -16,6 +16,9 @@ public class SeqScan implements OpIterator {
     private String tableAlias;
     private Tuple next = null;
     private boolean open = false;
+    // private HeapFile.HeapFileIterator heapFileIterator;
+    private HeapFile heapFile;
+    private TupleIterator tupleIterator;
     private DbFileIterator dbFileIterator;
     /**
      * Creates a sequential scan over the specified table as a part of the
@@ -79,14 +82,6 @@ public class SeqScan implements OpIterator {
         this(tid, tableId, Database.getCatalog().getTableName(tableId));
     }
 
-    public void open() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
-        // some code goes here
-        DbFile dbFile = Database.getCatalog().getDatabaseFile(tableId);
-        dbFileIterator = dbFile.iterator(tid);
-        dbFileIterator.open();
-        this.open = true;
-    }
-
     /**
      * Returns the TupleDesc with field names from the underlying HeapFile,
      * prefixed with the tableAlias string from the constructor. This prefix
@@ -110,6 +105,14 @@ public class SeqScan implements OpIterator {
             fieldNames[i] = fieldName;
         }
         return new TupleDesc(types, fieldNames);
+    }
+
+    public void open() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
+        // some code goes here
+        heapFile = (HeapFile) Database.getCatalog().getDatabaseFile(tableId);
+        dbFileIterator = heapFile.iterator(tid);
+        dbFileIterator.open();
+        this.open = true;
     }
 
     public boolean hasNext() throws TransactionAbortedException, DbException, NoSuchFieldException, IOException {

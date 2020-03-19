@@ -341,10 +341,53 @@ public class HeapPage implements Page {
                 tupleSet.add(tuples[i]);
             }
         }
-        // System.out.println(tuples.length);
-        if(tupleSet.size() == 0) {
-            throw new UnsupportedOperationException();
-        }
+        System.out.println(tupleSet.size());
+        /*class heapPageIterator implements DbFileIterator{
+            private List tuples;
+            private Iterator tupleIterator = null;
+            private boolean open = false;
+
+            private heapPageIterator (List tuples){
+                this.tuples = tuples;
+            }
+
+            @Override
+            public void open() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
+                this.tupleIterator = tuples.iterator();
+                this.open = true;
+            }
+
+            @Override
+            public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
+                if (!open) return false;
+                if (tupleIterator == null) return false;
+                return tupleIterator.hasNext();
+            }
+
+            @Override
+            public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException, NoSuchFieldException, IOException {
+                if (hasNext()) {
+                    return (Tuple)tupleIterator.next();
+                }
+                return null;
+            }
+
+            @Override
+            public void rewind() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
+                close();
+                open();
+            }
+
+            @Override
+            public void close() {
+                this.tupleIterator = null;
+                this.open = false;
+            }
+
+            public void remove () {
+                throw new UnsupportedOperationException();
+            }
+        }*/
         return tupleSet.iterator();
     }
 
