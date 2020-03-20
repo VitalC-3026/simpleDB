@@ -76,15 +76,15 @@ public class BufferPool {
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
             throws IOException, NoSuchFieldException {
         // some code goes here
-        /*if (bufferPoolEdit.containsKey(pid)) {
+        if (bufferPoolEdit.size() < numPages) {
+            if (bufferPoolEdit.containsKey(pid)) {
             return bufferPoolEdit.get(pid);
-        } else {
-            Page newPage = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
-            bufferPoolEdit.put(pid, newPage);
-            return newPage;
-        }*/
-        if (bufferPool.size() < numPages ) {
-            for (Page page: bufferPool) {
+            } else {
+                Page newPage = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
+                bufferPoolEdit.put(pid, newPage);
+                return newPage;
+            }
+            /*for (Page page: bufferPool) {
                 if ((page).getId().equals(pid)) {
                     return page;
                 }
@@ -92,7 +92,7 @@ public class BufferPool {
             // get the Page from where?
             Page newPage = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
             bufferPool.add(newPage);
-            return newPage;
+            return newPage;*/
         } else {
             // eviction function ×implemented
             bufferPool.removeFirst();

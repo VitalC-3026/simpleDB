@@ -298,13 +298,13 @@ public class HeapPage implements Page {
                 numUsedSlots++;
             }
         }*/
-        int numUsedSlots = 0;
+        int numEmptySlots = 0;
         for (int i = 0; i < numSlots; i++) {
-            if(isSlotUsed(i)){
-                numUsedSlots++;
+            if(!isSlotUsed(i)){
+                numEmptySlots++;
             }
         }
-        return numSlots-numUsedSlots;
+        return numEmptySlots;
     }
 
     /**
@@ -341,7 +341,7 @@ public class HeapPage implements Page {
                 tupleSet.add(tuples[i]);
             }
         }
-        System.out.println(tupleSet.size());
+        // System.out.println(tupleSet.size());
         /*class heapPageIterator implements DbFileIterator{
             private List tuples;
             private Iterator tupleIterator = null;

@@ -23,7 +23,7 @@ public class Catalog {
      */
     public Catalog() {
         // some code goes here
-        catalog = new LinkedList<>();
+        catalog = new ArrayList<>();
     }
 
     public static class Table {
