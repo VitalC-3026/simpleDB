@@ -2,6 +2,7 @@ package simpledb;
 
 import java.io.*;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 
 /**
@@ -28,6 +29,7 @@ public class BufferPool {
 
     private int numPages = DEFAULT_PAGES;
     private LinkedList<Page> bufferPool;
+    private HashMap<PageId, Page> bufferPoolEdit;
 
 
     /**
@@ -38,6 +40,7 @@ public class BufferPool {
     public BufferPool(int numPages) {
         // some code goes here
         this.numPages = numPages;
+        this.bufferPoolEdit = new HashMap<>();
         this.bufferPool = new LinkedList<>();
     }
     
@@ -73,6 +76,13 @@ public class BufferPool {
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
             throws IOException, NoSuchFieldException {
         // some code goes here
+        /*if (bufferPoolEdit.containsKey(pid)) {
+            return bufferPoolEdit.get(pid);
+        } else {
+            Page newPage = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
+            bufferPoolEdit.put(pid, newPage);
+            return newPage;
+        }*/
         if (bufferPool.size() < numPages ) {
             for (Page page: bufferPool) {
                 if ((page).getId().equals(pid)) {
@@ -85,10 +95,9 @@ public class BufferPool {
             return newPage;
         } else {
             // eviction function ×implemented
-            bufferPool.remove(1);
+            bufferPool.removeFirst();
             bufferPool.add(Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid));
         }
-
         return null;
     }
 
