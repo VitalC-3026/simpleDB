@@ -7,6 +7,9 @@ import java.io.Serializable;
  */
 public class Predicate implements Serializable {
 
+    private int field;
+    private Field operand;
+    private Op op;
     private static final long serialVersionUID = 1L;
 
     /** Constants used for return codes in Field.compare */
@@ -20,6 +23,7 @@ public class Predicate implements Serializable {
          * @param i
          *            a valid integer Op index
          */
+        // 这个函数的作用是什么？
         public static Op getOp(int i) {
             return values()[i];
         }
@@ -56,6 +60,9 @@ public class Predicate implements Serializable {
      */
     public Predicate(int field, Op op, Field operand) {
         // some code goes here
+        this.field = field;
+        this.op = op;
+        this.operand = operand;
     }
 
     /**
@@ -64,7 +71,7 @@ public class Predicate implements Serializable {
     public int getField()
     {
         // some code goes here
-        return -1;
+        return this.field;
     }
 
     /**
@@ -73,7 +80,7 @@ public class Predicate implements Serializable {
     public Op getOp()
     {
         // some code goes here
-        return null;
+        return this.op;
     }
     
     /**
@@ -82,7 +89,7 @@ public class Predicate implements Serializable {
     public Field getOperand()
     {
         // some code goes here
-        return null;
+        return this.operand;
     }
     
     /**
@@ -95,9 +102,9 @@ public class Predicate implements Serializable {
      *            The tuple to compare against
      * @return true if the comparison is true, false otherwise.
      */
-    public boolean filter(Tuple t) {
+    public boolean filter(Tuple t) throws NoSuchFieldException {
         // some code goes here
-        return false;
+        return operand.compare(this.op, t.getField(this.field));
     }
 
     /**
@@ -106,6 +113,6 @@ public class Predicate implements Serializable {
      */
     public String toString() {
         // some code goes here
-        return "";
+        return "field_id = " + this.field + " op = " + this.op.toString() + " operand = " + this.operand.toString();
     }
 }

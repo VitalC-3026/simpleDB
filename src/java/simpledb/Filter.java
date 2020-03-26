@@ -1,12 +1,14 @@
 package simpledb;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
  * Filter is an operator that implements a relational select.
  */
 public class Filter extends Operator {
-
+    private Predicate p;
+    private OpIterator child;
     private static final long serialVersionUID = 1L;
 
     /**
@@ -20,29 +22,34 @@ public class Filter extends Operator {
      */
     public Filter(Predicate p, OpIterator child) {
         // some code goes here
+        this.p = p;
+        this.child = child;
     }
 
     public Predicate getPredicate() {
         // some code goes here
-        return null;
+        return this.p;
     }
 
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+        return this.child.getTupleDesc();
     }
 
     public void open() throws DbException, NoSuchElementException,
-            TransactionAbortedException {
+            TransactionAbortedException, NoSuchFieldException, IOException {
         // some code goes here
+        this.child.open();
     }
 
     public void close() {
         // some code goes here
     }
 
-    public void rewind() throws DbException, TransactionAbortedException {
+    public void rewind() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
         // some code goes here
+        close();
+        open();
     }
 
     /**
