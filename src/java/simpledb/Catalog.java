@@ -64,14 +64,15 @@ public class Catalog {
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
         Table newTable = new Table(file, name, pkeyField);
-        for (Table table: catalog) {
+        catalog.removeIf(table -> name.equals(table.name) || table.tableId == file.getId());
+        /*for (Table table: catalog) {
             if (name.equals(table.name)) {
                 catalog.remove(table);
             }
             if (table.tableId == file.getId()) {
                 catalog.remove (table);
             }
-        }
+        }*/
         catalog.add(newTable);
     }
 
