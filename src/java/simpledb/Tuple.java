@@ -16,7 +16,7 @@ public class Tuple implements Serializable {
     private static final long serialVersionUID = 1L;
     private TupleDesc schema;
     private RecordId recordId;
-    private List<Field> fieldList;
+    private List<Field> fieldList = new ArrayList<>();
     /**
      * Create a new tuple with the specified schema (type).
      *
@@ -67,8 +67,7 @@ public class Tuple implements Serializable {
      */
     public void setField(int i, Field f) throws NoSuchFieldException {
         // some code goes here
-        if (fieldList == null) {
-            fieldList = new ArrayList<>();
+        if (fieldList.size() == 0) {
             fieldList.add(f);
             return ;
         }
