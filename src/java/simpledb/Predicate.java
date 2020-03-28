@@ -104,7 +104,8 @@ public class Predicate implements Serializable {
      */
     public boolean filter(Tuple t) throws NoSuchFieldException {
         // some code goes here
-        return operand.compare(this.op, t.getField(this.field));
+        // why operand.compare(this.op, t.getField(this.field)); does not work?
+        return t.getField(this.field).compare(this.op, this.operand);
     }
 
     /**
