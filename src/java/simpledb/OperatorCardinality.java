@@ -20,7 +20,7 @@ public class OperatorCardinality {
      * */
     public static boolean updateOperatorCardinality(Operator o,
             Map<String, Integer> tableAliasToId,
-            Map<String, TableStats> tableStats) {
+            Map<String, TableStats> tableStats) throws NoSuchFieldException {
         if (o instanceof Filter) {
             return updateFilterCardinality((Filter) o, tableAliasToId,
                     tableStats);
@@ -54,7 +54,7 @@ public class OperatorCardinality {
 
     private static boolean updateFilterCardinality(Filter f,
             Map<String, Integer> tableAliasToId,
-            Map<String, TableStats> tableStats) {
+            Map<String, TableStats> tableStats) throws NoSuchFieldException {
         OpIterator child = f.getChildren()[0];
         Predicate pred = f.getPredicate();
         String[] tmp = child.getTupleDesc().getFieldName(pred.getField())
@@ -90,7 +90,7 @@ public class OperatorCardinality {
 
     private static boolean updateJoinCardinality(Join j,
             Map<String, Integer> tableAliasToId,
-            Map<String, TableStats> tableStats) {
+            Map<String, TableStats> tableStats) throws NoSuchFieldException {
 
         OpIterator[] children = j.getChildren();
         OpIterator child1 = children[0];
@@ -146,7 +146,7 @@ public class OperatorCardinality {
 
     private static boolean updateHashEquiJoinCardinality(HashEquiJoin j,
             Map<String, Integer> tableAliasToId,
-            Map<String, TableStats> tableStats) {
+            Map<String, TableStats> tableStats) throws NoSuchFieldException {
 
         OpIterator[] children = j.getChildren();
         OpIterator child1 = children[0];
@@ -203,7 +203,7 @@ public class OperatorCardinality {
 
     private static boolean updateAggregateCardinality(Aggregate a,
             Map<String, Integer> tableAliasToId,
-            Map<String, TableStats> tableStats) {
+            Map<String, TableStats> tableStats) throws NoSuchFieldException {
         OpIterator child = a.getChildren()[0];
         int childCard = 1;
         boolean hasJoinPK = false;

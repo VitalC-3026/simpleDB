@@ -58,7 +58,7 @@ public class QueryPlanVisualizer {
 
     private SubTreeDescriptor buildTree(int queryPlanDepth, int currentDepth,
                                         OpIterator queryPlan, int currentStartPosition,
-                                        int parentUpperBarStartShift) {
+                                        int parentUpperBarStartShift) throws NoSuchFieldException {
         if (queryPlan == null)
             return null;
 
@@ -359,7 +359,7 @@ public class QueryPlanVisualizer {
         }
     }
 
-    public String getQueryPlanTree(OpIterator physicalPlan) {
+    public String getQueryPlanTree(OpIterator physicalPlan) throws NoSuchFieldException {
         int queryPlanDepth = this.calculateQueryPlanTreeDepth(physicalPlan) - 1;
 
         SubTreeDescriptor root = this.buildTree(queryPlanDepth, 0,
@@ -390,7 +390,7 @@ public class QueryPlanVisualizer {
         return sb.reverse().toString();
     }
 
-    public void printQueryPlanTree(OpIterator physicalPlan, PrintStream out) {
+    public void printQueryPlanTree(OpIterator physicalPlan, PrintStream out) throws NoSuchFieldException {
         if (out == null)
             out = System.out;
 

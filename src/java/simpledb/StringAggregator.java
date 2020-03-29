@@ -6,6 +6,10 @@ package simpledb;
 public class StringAggregator implements Aggregator {
 
     private static final long serialVersionUID = 1L;
+    private int gbField;
+    private Type gbFieldType;
+    private int afield;
+    private Op what;
 
     /**
      * Aggregate constructor
@@ -18,6 +22,10 @@ public class StringAggregator implements Aggregator {
 
     public StringAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
         // some code goes here
+        this.gbField = gbfield;
+        this.afield = afield;
+        this.gbFieldType = gbfieldtype;
+        this.what = what;
     }
 
     /**

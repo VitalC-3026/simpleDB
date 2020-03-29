@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -10,6 +11,12 @@ import java.util.*;
 public class Aggregate extends Operator {
 
     private static final long serialVersionUID = 1L;
+    private OpIterator child;
+    private int afield;
+    private int gfield;
+    private Aggregator.Op aop;
+    private List<OpIterator> children;
+    private Tuple outputTuple = null;
 
     /**
      * Constructor.
@@ -31,6 +38,12 @@ public class Aggregate extends Operator {
      */
     public Aggregate(OpIterator child, int afield, int gfield, Aggregator.Op aop) {
 	// some code goes here
+        this.child = child;
+        this.afield = afield;
+        this.gfield = gfield;
+        this.aop = aop;
+        children = new LinkedList<>();
+        children.add(child);
     }
 
     /**
@@ -40,7 +53,10 @@ public class Aggregate extends Operator {
      * */
     public int groupField() {
 	// some code goes here
-	return -1;
+        if (gfield == -1) {
+            return Aggregator.NO_GROUPING;
+        }
+	    return gfield;
     }
 
     /**
@@ -48,9 +64,14 @@ public class Aggregate extends Operator {
      *         of the groupby field in the <b>OUTPUT</b> tuples. If not, return
      *         null;
      * */
-    public String groupFieldName() {
+    public String groupFieldName() throws NoSuchFieldException {
 	// some code goes here
-	return null;
+        if (gfield == -1) {
+            return null;
+        }
+        // what if the child hasn't opened yet
+	    // return this.child.next().getField(gfield).toString();
+        return outputTuple.getField(gfield).toString();
     }
 
     /**
@@ -58,16 +79,17 @@ public class Aggregate extends Operator {
      * */
     public int aggregateField() {
 	// some code goes here
-	return -1;
+	    return afield;
     }
 
     /**
      * @return return the name of the aggregate field in the <b>OUTPUT</b>
      *         tuples
      * */
-    public String aggregateFieldName() {
+    public String aggregateFieldName() throws NoSuchFieldException {
 	// some code goes here
-	return null;
+        // return this.child.next().getField(afield).toString();
+        return outputTuple.getField(afield).toString();
     }
 
     /**
@@ -75,7 +97,7 @@ public class Aggregate extends Operator {
      * */
     public Aggregator.Op aggregateOp() {
 	// some code goes here
-	return null;
+	    return aop;
     }
 
     public static String nameOfAggregatorOp(Aggregator.Op aop) {
@@ -83,8 +105,10 @@ public class Aggregate extends Operator {
     }
 
     public void open() throws NoSuchElementException, DbException,
-	    TransactionAbortedException {
+            TransactionAbortedException, NoSuchFieldException, IOException {
 	// some code goes here
+        this.child.open();
+        super.open();
     }
 
     /**
@@ -94,13 +118,19 @@ public class Aggregate extends Operator {
      * the result tuple should contain one field representing the result of the
      * aggregate. Should return null if there are no more tuples.
      */
-    protected Tuple fetchNext() throws TransactionAbortedException, DbException {
+    protected Tuple fetchNext() throws TransactionAbortedException, DbException, NoSuchFieldException, IOException {
 	// some code goes here
-	return null;
+        if (child.hasNext()) {
+            return child.next();
+        }
+	    return null;
     }
 
-    public void rewind() throws DbException, TransactionAbortedException {
+    public void rewind() throws NoSuchElementException, DbException,
+            TransactionAbortedException, NoSuchFieldException, IOException {
 	// some code goes here
+        close();
+        open();
     }
 
     /**
@@ -116,22 +146,30 @@ public class Aggregate extends Operator {
      */
     public TupleDesc getTupleDesc() {
 	// some code goes here
-	return null;
+	    return child.getTupleDesc();
     }
 
     public void close() {
 	// some code goes here
+        outputTuple = null;
     }
 
     @Override
     public OpIterator[] getChildren() {
 	// some code goes here
-	return null;
+        OpIterator[] opIterators = new OpIterator[children.size()];
+        for (int i = 0; i < children.size(); i++) {
+            opIterators[i] = children.get(i);
+        }
+	    return opIterators;
     }
 
     @Override
     public void setChildren(OpIterator[] children) {
-	// some code goes here
+	    // some code goes here
+        for (int i = 0; i < children.length; i++) {
+            this.children.add(i, children[i]);
+        }
     }
     
 }
