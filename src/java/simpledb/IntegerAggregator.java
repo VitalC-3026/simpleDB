@@ -1,6 +1,7 @@
 package simpledb;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -14,10 +15,9 @@ public class IntegerAggregator implements Aggregator {
     private Type gbFieldType;
     private int afield;
     private Op what;
-    private HashMap<Op, List<Tuple>> Grouping = new HashMap<>();
-    private HashMap<Op, Type> GroupTd;
-    private List<Tuple> noGrouping;
-    private Type noGroupAType;
+    private List<Tuple> allTuples;
+    private HashMap<Integer, Integer> aggregateIntegers = new HashMap<>();
+    private HashMap<Integer, Tuple> aggregateTuples;
     /**
      * Aggregate constructor
      * 
@@ -39,13 +39,10 @@ public class IntegerAggregator implements Aggregator {
         this.afield = afield;
         this.gbFieldType = gbfieldtype;
         this.what = what;
-        if(gbfield != Aggregator.NO_GROUPING) {
-            Grouping.put(what, new LinkedList<Tuple>());
-            GroupTd = new HashMap<>();
-        } else {
-            noGrouping = new LinkedList<>();
+        aggregateTuples = new HashMap<>();
+        if (what.toString().equals("avg") || gbfield == Aggregator.NO_GROUPING) {
+            allTuples = new LinkedList<>();
         }
-
     }
 
     /**
@@ -59,15 +56,16 @@ public class IntegerAggregator implements Aggregator {
         // some code goes here
         Type aFieldType = tup.getField(afield).getType();
         Type gFieldType = tup.getField(gbField).getType();
-        if(gFieldType.equals(gbFieldType)) {
-            if (gbField == Aggregator.NO_GROUPING && noGroupAType.equals(aFieldType)) {
+        if(gFieldType.equals(gbFieldType) && aFieldType.equals(Type.INT_TYPE)) {
+            if (gbField == Aggregator.NO_GROUPING) {
                 Type[] types = new Type[1];
                 String[] names = new String[1];
                 names[0] = aFieldType.name();
                 types[0] = aFieldType;
+                // 传进来是一个包含了很多其他field的tuple，但我又无法设置一个新的tuple的值
                 TupleDesc newTupleDesc = new TupleDesc(types, names);
                 tup.resetTupleDesc(newTupleDesc);
-                noGrouping.add(tup);
+                allTuples.add(tup);
                 return;
             }
             Type[] types = new Type[2];
@@ -78,20 +76,48 @@ public class IntegerAggregator implements Aggregator {
             types[1] = aFieldType;
             TupleDesc newTupleDesc = new TupleDesc(types, names);
             tup.resetTupleDesc(newTupleDesc);
-            if(GroupTd.containsKey(what) && Grouping.containsKey(what)) {
-                if (aFieldType.equals(GroupTd.get(what))) {
-                    LinkedList tuples = (LinkedList) Grouping.get(what);
-                    tuples.add(tup);
-                    Grouping.put(what, tuples);
-                }
+            int gFieldInteger = ((IntField) tup.getField(gbField)).getValue();
+            int aFieldInteger = ((IntField) tup.getField(afield)).getValue();
+            if(what.toString().equals("avg")) {
+                allTuples.add(tup);
+            }
+            if(aggregateTuples.size() == 0 || !aggregateIntegers.containsKey(gFieldInteger)) {
+                aggregateIntegers.put(gFieldInteger, aFieldInteger);
+                aggregateTuples.put(gFieldInteger, tup);
             } else {
-                GroupTd.put(what, aFieldType);
-                LinkedList<Tuple> tuples = new LinkedList<>();
-                tuples.add(tup);
-                Grouping.put(what, tuples);
+                int newInteger = aggregateManipulation(what, tup);
+                int oldInteger = aggregateIntegers.get(gFieldInteger);
+                aggregateIntegers.replace(gFieldInteger, oldInteger, newInteger);
+                if (newInteger != oldInteger) {
+                    tup.setField(1, new IntField(newInteger));
+                    aggregateTuples.put(gFieldInteger, tup);
+                }
             }
         }
+    }
 
+    private int aggregateManipulation (Op what, Tuple tuple) throws NoSuchFieldException {
+        int toAggregate = ((IntField)tuple.getField(afield)).getValue();
+        int gFieldInteger = ((IntField) tuple.getField(gbField)).getValue();
+        switch (what) {
+            case MIN: return Math.min(aggregateIntegers.get(gFieldInteger), toAggregate);
+            case MAX: return Math.max(aggregateIntegers.get(gFieldInteger), toAggregate);
+            case COUNT: return aggregateIntegers.get(gFieldInteger) + 1;
+            case SUM: return aggregateIntegers.get(gFieldInteger) + toAggregate;
+            case AVG: {
+                int sum = 0, count = 0;
+                for (Tuple tup: allTuples) {
+                    if (((IntField) tup.getField(gbField)).getValue() == gFieldInteger) {
+                        sum += ((IntField) tup.getField(afield)).getValue();
+                        count++;
+                    }
+                }
+                count++;
+                sum += toAggregate;
+                return sum/count;
+            }
+        }
+        throw new IllegalArgumentException("Impossible to get here in aggregateManipulation");
     }
 
     /**
@@ -105,14 +131,13 @@ public class IntegerAggregator implements Aggregator {
     public OpIterator iterator() {
         // some code goes here
         // throw new UnsupportedOperationException("please implement me for lab2");
-        if (gbField == Aggregator.NO_GROUPING) {
-            TupleDesc tupleDesc = noGrouping.get(0).getTupleDesc();
-            return new TupleIterator(tupleDesc, noGrouping);
+        Iterator<Integer> iterator = aggregateIntegers.keySet().iterator();
+        LinkedList<Tuple> tuples = new LinkedList<>();
+        while (iterator.hasNext()) {
+            tuples.add(aggregateTuples.get(iterator.next()));
         }
-        else {
-            TupleDesc tupleDesc = Grouping.get(what).get(0).getTupleDesc();
-            return new TupleIterator(tupleDesc, Grouping.get(what));
-        }
+        TupleDesc tupleDesc = tuples.get(0).getTupleDesc();
+        return new TupleIterator(tupleDesc, tuples);
     }
 
 }
