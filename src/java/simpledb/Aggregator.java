@@ -80,6 +80,6 @@ public interface Aggregator extends Serializable {
      * Create a OpIterator over group aggregate results.
      * @see simpledb.TupleIterator for a possible helper
      */
-    public OpIterator iterator();
+    public OpIterator iterator() throws NoSuchFieldException;
     
 }
