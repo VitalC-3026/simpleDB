@@ -113,7 +113,7 @@ public class LogTest extends SimpleDbTestBase {
     // create an initial database with two empty tables
     // does *not* initiate log file recovery
     void setup()
-            throws IOException, DbException, TransactionAbortedException {
+            throws IOException, DbException, TransactionAbortedException, NoSuchFieldException {
         Database.reset();
 
         // empty heap files w/ 2 columns.

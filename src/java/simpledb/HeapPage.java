@@ -14,13 +14,13 @@ import java.io.*;
  */
 public class HeapPage implements Page {
 
-    final HeapPageId pid;
-    final TupleDesc td;
-    byte header[];
-    final Tuple tuples[];
-    final int numSlots;
+    private final HeapPageId pid;
+    private final TupleDesc td;
+    private byte[] header;
+    private final Tuple[] tuples;
+    private final int numSlots;
 
-    byte[] oldData;
+    private byte[] oldData;
     private final Byte oldDataLock=new Byte((byte)0);
 
     private boolean isDirty = false;
@@ -256,7 +256,7 @@ public class HeapPage implements Page {
             throw new DbException("page is empty");
         }
         for(int i = 0; i < numSlots; i++) {
-            if(tuples[i].equals(t)) {
+            if (t.equals(tuples[i])) {
                 tuples[i] = null;
                 markSlotUsed(i, false);
                 break;

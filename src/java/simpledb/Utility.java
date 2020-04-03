@@ -101,7 +101,7 @@ public class Utility {
      * the specified number of columns as IntFields.
      */
     public static HeapFile createEmptyHeapFile(String path, int cols)
-        throws IOException {
+            throws IOException, NoSuchFieldException {
         File f = new File(path);
         // touch the file
         FileOutputStream fos = new FileOutputStream(f);
