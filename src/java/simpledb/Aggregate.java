@@ -17,7 +17,10 @@ public class Aggregate extends Operator {
     private Aggregator.Op aop;
     private List<OpIterator> children;
     private Tuple outputTuple = null;
-
+    private boolean agg = false;
+    private IntegerAggregator integerAggregator = null;
+    private StringAggregator stringAggregator = null;
+    private OpIterator result;
     /**
      * Constructor.
      * 
@@ -120,8 +123,50 @@ public class Aggregate extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException, NoSuchFieldException, IOException {
 	// some code goes here
-        if (child.hasNext()) {
-            return child.next();
+        if (!agg) {
+            agg = true;
+            while (child.hasNext()) {
+                outputTuple = child.next();
+                if(outputTuple.getField(afield).getType().equals(Type.INT_TYPE)) {
+                    if(integerAggregator == null){
+                        Type gType;
+                        if(gfield == Aggregator.NO_GROUPING) {
+                            gType = Type.INT_TYPE;
+                        } else {
+                            gType = outputTuple.getField(gfield).getType();
+                        }
+                        integerAggregator = new IntegerAggregator(gfield, gType, afield, aop);
+                        integerAggregator.mergeTupleIntoGroup(outputTuple);
+                    } else {
+                        integerAggregator.mergeTupleIntoGroup(outputTuple);
+                    }
+                }
+                if(outputTuple.getField(afield).getType().equals(Type.STRING_TYPE)) {
+                    if(stringAggregator == null) {
+                        Type gType;
+                        if(gfield == Aggregator.NO_GROUPING) {
+                            gType = Type.INT_TYPE;
+                        } else {
+                            gType = outputTuple.getField(gfield).getType();
+                        }
+                        stringAggregator = new StringAggregator(gfield, gType, afield, aop);
+                        stringAggregator.mergeTupleIntoGroup(outputTuple);
+                    } else {
+                        stringAggregator.mergeTupleIntoGroup(outputTuple);
+                    }
+                }
+            }
+            if(integerAggregator != null) {
+                result = integerAggregator.iterator();
+                result.open();
+            }
+            if(stringAggregator != null) {
+                result = stringAggregator.iterator();
+                result.open();
+            }
+        }
+        if(result.hasNext()) {
+            return result.next();
         }
 	    return null;
     }
@@ -152,6 +197,10 @@ public class Aggregate extends Operator {
     public void close() {
 	// some code goes here
         outputTuple = null;
+        result.close();
+        child.close();
+        super.close();
+        agg = false;
     }
 
     @Override

@@ -44,6 +44,12 @@ public class StringAggregator implements Aggregator {
     public void mergeTupleIntoGroup(Tuple tup) throws NoSuchFieldException {
         // some code goes here
         Type aFieldType = tup.getField(afield).getType();
+        if (gbField == Aggregator.NO_GROUPING) {
+            if(aFieldType.equals(Type.STRING_TYPE)) {
+                count++;
+            }
+            return;
+        }
         Type gFieldType = tup.getField(gbField).getType();
         if (oldType == null) {
             oldType = aFieldType;
@@ -51,11 +57,6 @@ public class StringAggregator implements Aggregator {
             return;
         }
         if(gFieldType.equals(gbFieldType)) {
-            if (gbField == Aggregator.NO_GROUPING) {
-                count++;
-                return;
-            }
-
             int gFieldInteger = ((IntField) tup.getField(gbField)).getValue();
             if(aggregateCounts.size() == 0 || !aggregateCounts.containsKey(gFieldInteger)) {
                 aggregateCounts.put(gFieldInteger, 1);
