@@ -43,7 +43,7 @@ public class StringAggregator implements Aggregator {
      */
     public void mergeTupleIntoGroup(Tuple tup) throws NoSuchFieldException {
         // some code goes here
-        Type aFieldType = tup.getField(gbField).getType();
+        Type aFieldType = tup.getField(afield).getType();
         Type gFieldType = tup.getField(gbField).getType();
         if (oldType == null) {
             oldType = aFieldType;
@@ -101,9 +101,12 @@ public class StringAggregator implements Aggregator {
             LinkedList<Tuple> tuples = new LinkedList<>();
             while (iterator.hasNext()) {
                 Tuple tuple = new Tuple(tupleDesc);
-                int count = aggregateCounts.get(iterator.next());
-                IntField intField = new IntField(count);
-                tuple.setField(1, intField);
+                int gbKey = iterator.next();
+                int count = aggregateCounts.get(gbKey);
+                IntField intFieldCount = new IntField(count);
+                IntField intGbField = new IntField(gbKey);
+                tuple.setField(0, intGbField);
+                tuple.setField(1, intFieldCount);
                 tuples.add(tuple);
             }
             return new TupleIterator(tupleDesc, tuples);
