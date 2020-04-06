@@ -16,7 +16,7 @@ import java.util.*;
 public class HeapFile implements DbFile {
     private File file;
     private TupleDesc td;
-    private ArrayList<Page> pages = new ArrayList<>();
+    // private ArrayList<Page> pages = new ArrayList<>();
     /**
      * Constructs a heap file backed by the specified file.
      * 
@@ -91,7 +91,7 @@ public class HeapFile implements DbFile {
         byte[] data = page.getPageData();
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
-            randomAccessFile.seek(0);
+            randomAccessFile.seek(page.getId().getPageNumber()*BufferPool.getPageSize());
             randomAccessFile.write(data, 0, data.length);
         } catch (Exception e) {
             e.printStackTrace();
@@ -114,15 +114,61 @@ public class HeapFile implements DbFile {
             throws DbException, IOException, TransactionAbortedException, NoSuchFieldException {
         // some code goes here
         // not necessary for lab1
-        HeapPageId heapPageId = new HeapPageId(getId(), t.getRecordId().getPageId().getPageNumber());
+        ArrayList<Page> pages = new ArrayList<>();
+        for (int i = 0; i < numPages(); i++) {
+            HeapPageId heapPageId = new HeapPageId(getId(), i);
+            HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid, heapPageId, Permissions.READ_WRITE);
+            if (heapPage.getNumEmptySlots() > 0) {
+                heapPage.insertTuple(t);
+                heapPage.markDirty(true, tid);
+                pages.add(heapPage);
+                break;
+            }
+        }
+        // 创建新的blank paper的时候要先写入文件，再从buffer pool取出来，再insert tuple
+        if (pages.size() == 0) {
+            HeapPageId newPageId = new HeapPageId(getId(), numPages());
+            HeapPage newPage = new HeapPage(newPageId, HeapPage.createEmptyPageData());
+            writePage(newPage);
+            HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid, newPageId, Permissions.READ_WRITE);
+            heapPage.markDirty(true, tid);
+            heapPage.insertTuple(t);
+            pages.add(heapPage);
+
+        }
+        /*HeapPageId heapPageId = new HeapPageId(getId(), t.getRecordId().getPageId().getPageNumber());
         HeapPage page = (HeapPage) Database.getBufferPool().getPage(tid, heapPageId, Permissions.READ_WRITE);
         if (page.getNumEmptySlots() > 0) {
             page.insertTuple(t);
-        }
-        pages.add(page);
-        for (Page p: pages) {
-            writePage(p);
-        }
+            pages.add(page);
+            if (readPage(heapPageId) == null) {
+                writePage(page);
+            }
+        } else {
+            for (int i = 1; ; i++) {
+                byte[] data = new byte[BufferPool.getPageSize()];
+                HeapPageId newPageId = new HeapPageId(getId(), t.getRecordId().getPageId().getPageNumber() + i);
+                HeapPage nextPage = (HeapPage) Database.getBufferPool().getPage(tid, newPageId, Permissions.READ_WRITE);
+                if (nextPage != null) {
+                    if (nextPage.getNumEmptySlots() > 0) {
+                        nextPage.insertTuple(t);
+                        pages.add(nextPage);
+                        if (readPage(newPageId) == null) {
+                            writePage(nextPage);
+                        }
+                        break;
+                    }
+                } else {
+                    HeapPage newPage = new HeapPage(newPageId, data);
+                    newPage.insertTuple(t);
+                    pages.add(newPage);
+                    if (readPage(newPageId) == null) {
+                        writePage(newPage);
+                    }
+                    break;
+                }
+            }
+        }*/
         return pages;
     }
 
@@ -138,6 +184,9 @@ public class HeapFile implements DbFile {
                 page.deleteTuple(t);
             }
             pages.add(page);
+        }
+        if (pages.size() == 0) {
+            throw new DbException("tuple " + t + " is not in this table");
         }
         return pages;
         // not necessary for lab1
