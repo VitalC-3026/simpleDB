@@ -134,41 +134,7 @@ public class HeapFile implements DbFile {
             heapPage.markDirty(true, tid);
             heapPage.insertTuple(t);
             pages.add(heapPage);
-
         }
-        /*HeapPageId heapPageId = new HeapPageId(getId(), t.getRecordId().getPageId().getPageNumber());
-        HeapPage page = (HeapPage) Database.getBufferPool().getPage(tid, heapPageId, Permissions.READ_WRITE);
-        if (page.getNumEmptySlots() > 0) {
-            page.insertTuple(t);
-            pages.add(page);
-            if (readPage(heapPageId) == null) {
-                writePage(page);
-            }
-        } else {
-            for (int i = 1; ; i++) {
-                byte[] data = new byte[BufferPool.getPageSize()];
-                HeapPageId newPageId = new HeapPageId(getId(), t.getRecordId().getPageId().getPageNumber() + i);
-                HeapPage nextPage = (HeapPage) Database.getBufferPool().getPage(tid, newPageId, Permissions.READ_WRITE);
-                if (nextPage != null) {
-                    if (nextPage.getNumEmptySlots() > 0) {
-                        nextPage.insertTuple(t);
-                        pages.add(nextPage);
-                        if (readPage(newPageId) == null) {
-                            writePage(nextPage);
-                        }
-                        break;
-                    }
-                } else {
-                    HeapPage newPage = new HeapPage(newPageId, data);
-                    newPage.insertTuple(t);
-                    pages.add(newPage);
-                    if (readPage(newPageId) == null) {
-                        writePage(newPage);
-                    }
-                    break;
-                }
-            }
-        }*/
         return pages;
     }
 
@@ -176,20 +142,17 @@ public class HeapFile implements DbFile {
     public ArrayList<Page> deleteTuple(TransactionId tid, Tuple t) throws DbException,
             TransactionAbortedException, IOException, NoSuchFieldException {
         // some code goes here
+        // not necessary for lab1
         ArrayList<Page> pages = new ArrayList<>();
-        for (int i = 0; i < numPages(); i++) {
-            HeapPageId heapPageId = new HeapPageId(getId(), i);
-            HeapPage page = (HeapPage) Database.getBufferPool().getPage(tid, heapPageId, Permissions.READ_WRITE);
-            if (t.getRecordId().getPageId().equals(heapPageId)) {
-                page.deleteTuple(t);
-            }
-            pages.add(page);
-        }
+        HeapPageId heapPageId = new HeapPageId(getId(), t.getRecordId().getPageId().getPageNumber());
+        HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid, heapPageId, Permissions.READ_WRITE);
+        heapPage.deleteTuple(t);
+        pages.add(heapPage);
+        heapPage.markDirty(true, tid);
         if (pages.size() == 0) {
             throw new DbException("tuple " + t + " is not in this table");
         }
         return pages;
-        // not necessary for lab1
     }
 
     // see DbFile.java for javadocs

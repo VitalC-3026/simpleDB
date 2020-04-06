@@ -2,6 +2,7 @@ package simpledb;
 
 import java.io.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -28,7 +29,6 @@ public class BufferPool {
     public static final int DEFAULT_PAGES = 50;
 
     private int numPages = DEFAULT_PAGES;
-    private LinkedList<Page> bufferPool;
     private HashMap<PageId, Page> bufferPoolEdit;
 
 
@@ -41,7 +41,6 @@ public class BufferPool {
         // some code goes here
         this.numPages = numPages;
         this.bufferPoolEdit = new HashMap<>();
-        this.bufferPool = new LinkedList<>();
     }
     
     public static int getPageSize() {
@@ -74,7 +73,7 @@ public class BufferPool {
      * @param perm the requested permissions on the page
      */
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
-            throws IOException, NoSuchFieldException {
+            throws IOException, NoSuchFieldException, DbException {
         // some code goes here
         if (bufferPoolEdit.size() < numPages) {
             if (bufferPoolEdit.containsKey(pid)) {
@@ -95,8 +94,9 @@ public class BufferPool {
             return newPage;*/
         } else {
             // eviction function ×implemented
-            bufferPool.removeFirst();
-            bufferPool.add(Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid));
+            /*bufferPool.removeFirst();
+            bufferPool.add(Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid));*/
+            evictPage();
         }
         return null;
     }
@@ -165,8 +165,11 @@ public class BufferPool {
         // some code goes here
         // not necessary for lab1
         HeapFile heapFile = (HeapFile) Database.getCatalog().getDatabaseFile(tableId);
-        heapFile.insertTuple(tid, t);
-
+        ArrayList<Page> pages = heapFile.insertTuple(tid, t);
+        for (Page page: pages) {
+            page.markDirty(true, tid);
+            bufferPoolEdit.put(page.getId(), page);
+        }
     }
 
     /**
@@ -183,9 +186,15 @@ public class BufferPool {
      * @param t the tuple to delete
      */
     public  void deleteTuple(TransactionId tid, Tuple t)
-        throws DbException, IOException, TransactionAbortedException {
+            throws DbException, IOException, TransactionAbortedException, NoSuchFieldException {
         // some code goes here
         // not necessary for lab1
+        HeapFile heapFile = (HeapFile) Database.getCatalog().getDatabaseFile(t.getRecordId().getPageId().getTableId());
+        ArrayList<Page> pages = heapFile.deleteTuple(tid, t);
+        for (Page page: pages) {
+            page.markDirty(true, tid);
+            bufferPoolEdit.put(page.getId(), page);
+        }
     }
 
     /**

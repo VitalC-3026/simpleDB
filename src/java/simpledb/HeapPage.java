@@ -255,13 +255,9 @@ public class HeapPage implements Page {
         if (getNumEmptySlots() == numSlots) {
             throw new DbException("page is empty");
         }
-        for(int i = 0; i < numSlots; i++) {
-            if (t.equals(tuples[i])) {
-                tuples[i] = null;
-                markSlotUsed(i, false);
-                break;
-            }
-        }
+        int index = t.getRecordId().getTupleNumber();
+        tuples[index] = null;
+        markSlotUsed(index, false);
     }
 
     /**
