@@ -226,7 +226,14 @@ public class TupleDesc implements Serializable {
                      }
                      if (items.get(i).fieldName == null) {
                          if (((TupleDesc) o).items.get(i).fieldName != null) {
-                             if (!((TupleDesc) o).items.get(i).fieldName.contains("null")) {
+                             if (((TupleDesc) o).items.get(i).fieldName.contains(".")) {
+                                 String name = ((TupleDesc) o).items.get(i).fieldName;
+                                 int index = name.indexOf(".");
+                                 name = name.substring(index + 1);
+                                 if (!name.contains("null")) {
+                                     return false;
+                                 }
+                             } else {
                                  return false;
                              }
                          }

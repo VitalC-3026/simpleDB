@@ -317,7 +317,7 @@ public class LogFile {
     }
 
     /** Checkpoint the log and write a checkpoint record. */
-    public void logCheckpoint() throws IOException {
+    public void logCheckpoint() throws IOException, NoSuchFieldException {
         //make sure we have buffer pool lock before proceeding
         synchronized (Database.getBufferPool()) {
             synchronized (this) {
@@ -478,7 +478,7 @@ public class LogFile {
         try {
             logCheckpoint();  //simple way to shutdown is to write a checkpoint record
             raf.close();
-        } catch (IOException e) {
+        } catch (IOException | NoSuchFieldException e) {
             System.out.println("ERROR SHUTTING DOWN -- IGNORING.");
             e.printStackTrace();
         }

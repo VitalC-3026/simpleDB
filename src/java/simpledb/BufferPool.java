@@ -2,9 +2,7 @@ package simpledb;
 
 import java.io.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.*;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -31,6 +29,9 @@ public class BufferPool {
     private int numPages = DEFAULT_PAGES;
     private HashMap<PageId, Page> bufferPoolEdit;
 
+    public int getBufferPool() {
+        return bufferPoolEdit.size();
+    }
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -77,7 +78,7 @@ public class BufferPool {
         // some code goes here
         if (bufferPoolEdit.size() < numPages) {
             if (bufferPoolEdit.containsKey(pid)) {
-            return bufferPoolEdit.get(pid);
+                return bufferPoolEdit.get(pid);
             } else {
                 Page newPage = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
                 bufferPoolEdit.put(pid, newPage);
@@ -93,12 +94,13 @@ public class BufferPool {
             bufferPool.add(newPage);
             return newPage;*/
         } else {
-            // eviction function ×implemented
             /*bufferPool.removeFirst();
             bufferPool.add(Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid));*/
             evictPage();
+            Page newPage = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
+            bufferPoolEdit.put(pid, newPage);
+            return newPage;
         }
-        return null;
     }
 
     /**
@@ -203,10 +205,12 @@ public class BufferPool {
      * NB: Be careful using this routine -- it writes dirty data to disk so will
      *     break simpledb if running in NO STEAL mode.
      */
-    public synchronized void flushAllPages() throws IOException {
+    public synchronized void flushAllPages() throws IOException, NoSuchFieldException {
         // some code goes here
         // not necessary for lab1
-
+        for (PageId pageId : bufferPoolEdit.keySet()) {
+            flushPage(pageId);
+        }
     }
 
     /** Remove the specific page id from the buffer pool.
@@ -220,15 +224,28 @@ public class BufferPool {
     public synchronized void discardPage(PageId pid) {
         // some code goes here
         // not necessary for lab1
+        bufferPoolEdit.remove(pid);
     }
 
     /**
      * Flushes a certain page to disk
      * @param pid an ID indicating the page to flush
      */
-    private synchronized  void flushPage(PageId pid) throws IOException {
+    private synchronized  void flushPage(PageId pid) throws IOException, NoSuchFieldException {
         // some code goes here
         // not necessary for lab1
+        if (bufferPoolEdit.containsKey(pid)) {
+            HeapPage heapPage = (HeapPage) bufferPoolEdit.get(pid);
+            TransactionId tid = heapPage.isDirty();
+            if (tid != null) {
+                HeapFile heapFile = (HeapFile) Database.getCatalog().getDatabaseFile(heapPage.getId().getTableId());
+                heapPage.markDirty(false, null);
+                heapFile.writePage(heapPage);
+            }
+        } else {
+            throw new NullPointerException("page not in buffer pool");
+        }
+
     }
 
     /** Write all pages of the specified transaction to disk.
@@ -242,9 +259,18 @@ public class BufferPool {
      * Discards a page from the buffer pool.
      * Flushes the page to disk to ensure dirty pages are updated on disk.
      */
-    private synchronized  void evictPage() throws DbException {
+    private synchronized void evictPage() throws DbException, IOException, NoSuchFieldException {
         // some code goes here
         // not necessary for lab1
+        Random r = new Random();
+        int page2evict = r.nextInt(numPages);
+        Iterator<PageId> it = bufferPoolEdit.keySet().iterator();
+        int i = 0;
+        while (it.hasNext() && i++ < page2evict - 1) {
+            it.next();
+        }
+        PageId pageId = it.next();
+        flushPage(pageId);
+        bufferPoolEdit.remove(pageId);
     }
-
 }

@@ -72,7 +72,7 @@ public class LogTest extends SimpleDbTestBase {
     }
 
     void abort(Transaction t)
-        throws DbException, TransactionAbortedException, IOException {
+            throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
         // t.transactionComplete(true); // abort
         Database.getBufferPool().flushAllPages(); // XXX defeat NO-STEAL-based abort
         Database.getLogFile().logAbort(t.getId()); // does rollback too
