@@ -166,6 +166,7 @@ public class BufferPool {
         // not necessary for lab1
         HeapFile heapFile = (HeapFile) Database.getCatalog().getDatabaseFile(tableId);
         ArrayList<Page> pages = heapFile.insertTuple(tid, t);
+        // 重写了insertTuple说明markDirty还需要在buffer pool进行
         for (Page page: pages) {
             page.markDirty(true, tid);
             bufferPoolEdit.put(page.getId(), page);

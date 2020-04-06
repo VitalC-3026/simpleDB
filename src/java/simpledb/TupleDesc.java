@@ -226,7 +226,9 @@ public class TupleDesc implements Serializable {
                      }
                      if (items.get(i).fieldName == null) {
                          if (((TupleDesc) o).items.get(i).fieldName != null) {
-                             return false;
+                             if (!((TupleDesc) o).items.get(i).fieldName.contains("null")) {
+                                 return false;
+                             }
                          }
                      } else if (!items.get(i).fieldName.equals(((TupleDesc) o).items.get(i).fieldName)) {
                         return false;
