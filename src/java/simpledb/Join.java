@@ -13,7 +13,6 @@ public class Join extends Operator {
     private OpIterator child1;
     private OpIterator child2;
     private List<OpIterator> opIterators;
-    private HashMap<String, Tuple> joinedTuples = new HashMap<>();
     private Tuple tuple1 = null;
     private Tuple tuple2 = null;
     /**
@@ -123,7 +122,7 @@ public class Join extends Operator {
                 tuple2 = child2.next();
                 if (p.filter(tuple1, tuple2)) {
                     Tuple newTuple = new Tuple(TupleDesc.merge(tuple1.getTupleDesc(), tuple2.getTupleDesc()));
-                    // OpIterator is iterator of tuples with same TupleDesc?
+                    // OpIterator is iterator of tuples with same TupleDesc? Yes
                     // Tuple tuple = new Tuple(getTupleDesc());
                     int count = 0;
                     for (int i = 0; i < tuple1.getTupleDesc().numFields(); i++) {
@@ -132,19 +131,6 @@ public class Join extends Operator {
                     for (int i = 0; i < tuple2.getTupleDesc().numFields(); i++) {
                         newTuple.setField(count++, tuple2.getField(i));
                     }
-                    /*if (fetchedTuple == null) {
-                        fetchedTuple = newTuple;
-                        return newTuple;
-                    } else if (fetchedTuple.toString().equals(newTuple.toString())){
-                        continue;
-                    } else {
-                        fetchedTuple = newTuple;
-                        return newTuple;
-                    }*/
-                    /*if (joinedTuples.containsKey(newTuple.toString())){
-                        continue;
-                    }
-                    joinedTuples.put(newTuple.toString(), newTuple);*/
                     return newTuple;
                 }
             }

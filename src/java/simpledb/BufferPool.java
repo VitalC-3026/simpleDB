@@ -231,7 +231,7 @@ public class BufferPool {
      * Flushes a certain page to disk
      * @param pid an ID indicating the page to flush
      */
-    private synchronized  void flushPage(PageId pid) throws IOException, NoSuchFieldException {
+    private synchronized void flushPage(PageId pid) throws IOException, NoSuchFieldException {
         // some code goes here
         // not necessary for lab1
         if (bufferPoolEdit.containsKey(pid)) {

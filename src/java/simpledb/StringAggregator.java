@@ -14,7 +14,7 @@ public class StringAggregator implements Aggregator {
     private Op what;
     private int count = 0;
     private Type oldType = null;
-    private HashMap<Integer, Integer> aggregateCounts;
+    private HashMap<Object, Integer> aggregateCounts;
 
     /**
      * Aggregate constructor
@@ -91,7 +91,7 @@ public class StringAggregator implements Aggregator {
             tuples.add(tuple);
             return new TupleIterator(tupleDesc, tuples);
         } else {
-            Iterator<Integer> iterator = aggregateCounts.keySet().iterator();
+            Iterator iterator = aggregateCounts.keySet().iterator();
             Type[] types = new Type[2];
             String[] strings = new String[2];
             types[0] = gbFieldType;
@@ -102,7 +102,7 @@ public class StringAggregator implements Aggregator {
             LinkedList<Tuple> tuples = new LinkedList<>();
             while (iterator.hasNext()) {
                 Tuple tuple = new Tuple(tupleDesc);
-                int gbKey = iterator.next();
+                int gbKey = (int) iterator.next();
                 int count = aggregateCounts.get(gbKey);
                 IntField intFieldCount = new IntField(count);
                 IntField intGbField = new IntField(gbKey);

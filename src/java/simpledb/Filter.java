@@ -25,7 +25,7 @@ public class Filter extends Operator {
         // some code goes here
         this.p = p;
         this.child = child;
-        opIterators = new ArrayList<>();
+        opIterators = new LinkedList<>();
         opIterators.add(this.child);
     }
 
