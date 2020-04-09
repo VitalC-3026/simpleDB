@@ -81,38 +81,11 @@ public class Join extends Operator {
         this.child2.open();
     }
 
-    /*void joinTuples() throws TransactionAbortedException, IOException, DbException, NoSuchFieldException {
-        this.child1.open();
-        this.child2.open();
-        while(this.child1.hasNext()) {
-            Tuple tuple1 = child1.next();
-            this.child2.rewind();
-            while (this.child2.hasNext()) {
-                Tuple tuple2 = child2.next();
-                if (p.filter(tuple1, tuple2)) {
-                    Tuple tuple = new Tuple(TupleDesc.merge(tuple1.getTupleDesc(),tuple2.getTupleDesc()));
-                    int count = 0;
-                    for (int i = 0; i < tuple1.getTupleDesc().numFields(); i++) {
-                        tuple.setField(count++, tuple1.getField(i));
-                    }
-                    for (int i = 0; i < tuple2.getTupleDesc().numFields(); i++) {
-                        tuple.setField(count++, tuple2.getField(i));
-                    }
-                    joinedTuples.add(tuple);
-                }
-            }
-        }
-        this.child2.close();
-        this.child1.close();
-    }*/
-
     public void close() {
         // some code goes here
         this.child2.close();
         this.child1.close();
         super.close();
-        /*tuple1 = null;
-        tuple2 = null;*/
     }
 
     public void rewind() throws DbException, NoSuchElementException,

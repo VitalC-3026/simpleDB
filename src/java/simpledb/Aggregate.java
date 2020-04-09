@@ -20,7 +20,7 @@ public class Aggregate extends Operator {
     private boolean agg = false;
     private IntegerAggregator integerAggregator = null;
     private StringAggregator stringAggregator = null;
-    private OpIterator result;
+    private OpIterator result = null;
     /**
      * Constructor.
      * 
@@ -123,7 +123,7 @@ public class Aggregate extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException, NoSuchFieldException, IOException {
 	// some code goes here
-        if (!agg) {
+        if (integerAggregator == null && stringAggregator == null) {
             agg = true;
             while (child.hasNext()) {
                 outputTuple = child.next();
@@ -197,7 +197,11 @@ public class Aggregate extends Operator {
     public void close() {
 	// some code goes here
         outputTuple = null;
-        result.close();
+        integerAggregator = null;
+        stringAggregator = null;
+        if (result != null) {
+            result.close();
+        }
         child.close();
         super.close();
         agg = false;
