@@ -5,6 +5,8 @@ import java.util.*;
 
 import simpledb.Predicate.Op;
 
+import javax.xml.crypto.Data;
+
 /**
  * BTreeFile is an implementation of a DbFile that stores a B+ tree.
  * Specifically, it stores a pointer to a root page,
@@ -24,7 +26,7 @@ public class BTreeFile implements DbFile {
 	private final TupleDesc td;
 	private final int tableid ;
 	private int keyField;
-
+    private IndexPredicate ipred;
 	/**
 	 * Constructs a B+ tree file backed by the specified file.
 	 * 
@@ -192,10 +194,43 @@ public class BTreeFile implements DbFile {
 	 * 
 	 */
 	private BTreeLeafPage findLeafPage(TransactionId tid, HashMap<PageId, Page> dirtypages, BTreePageId pid, Permissions perm,
-			Field f) 
-					throws DbException, TransactionAbortedException {
+			Field f)
+			throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
 		// some code goes here
-        return null;
+		if (pid.pgcateg() == BTreePageId.LEAF) {
+			BTreePage bTreePage = (BTreePage) getPage(tid, dirtypages, pid, perm);
+			return (BTreeLeafPage) bTreePage;
+		}
+		else {
+			BTreeInternalPage bTreeInternalPage = (BTreeInternalPage) getPage(tid, dirtypages, pid, Permissions.READ_ONLY);
+			BTreeInternalPageIterator bTreeInternalPageIterator = new BTreeInternalPageIterator(bTreeInternalPage);
+
+			if(f == null) {
+				BTreePageId cpid =  bTreeInternalPage.getChildId(0);
+				return findLeafPage(tid, dirtypages, cpid, Permissions.READ_ONLY, null);
+			} else {
+				BTreeEntry bTreeEntry = null;
+				while(bTreeInternalPageIterator.hasNext()) {
+					bTreeEntry = bTreeInternalPageIterator.next();
+					if (bTreeEntry.getKey().equals(f)) {
+						BTreeLeafPage bTreeLeafPageLeft = findLeafPage(tid, dirtypages, bTreeEntry.getLeftChild(), Permissions.READ_ONLY, f);
+						BTreeLeafPage bTreeLeafPageRight = findLeafPage(tid, dirtypages, bTreeEntry.getRightChild(), Permissions.READ_ONLY, f);
+						if (bTreeEntry.getLeftChild().pgcateg() == BTreePageId.LEAF) {
+							return bTreeLeafPageLeft;
+						}
+						if (bTreeEntry.getRightChild().pgcateg() == BTreePageId.LEAF) {
+							return bTreeLeafPageRight;
+						}
+					}
+					else if (f.compare(Op.LESS_THAN, bTreeEntry.getKey())){
+					    return findLeafPage(tid, dirtypages, bTreeEntry.getLeftChild(), Permissions.READ_ONLY, f);
+                    }
+				}
+                assert bTreeEntry != null;
+                return findLeafPage(tid, dirtypages, bTreeEntry.getRightChild(), Permissions.READ_ONLY, f);
+			}
+		}
+
 	}
 	
 	/**
@@ -212,7 +247,7 @@ public class BTreeFile implements DbFile {
 	 */
 	BTreeLeafPage findLeafPage(TransactionId tid, BTreePageId pid, Permissions perm,
 			Field f) 
-					throws DbException, TransactionAbortedException {
+					throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
 		return findLeafPage(tid, new HashMap<PageId, Page>(), pid, perm, f);
 	}
 
