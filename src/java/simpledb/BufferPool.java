@@ -166,8 +166,8 @@ public class BufferPool {
             throws DbException, IOException, TransactionAbortedException, NoSuchFieldException {
         // some code goes here
         // not necessary for lab1
-        HeapFile heapFile = (HeapFile) Database.getCatalog().getDatabaseFile(tableId);
-        ArrayList<Page> pages = heapFile.insertTuple(tid, t);
+        DbFile file = Database.getCatalog().getDatabaseFile(tableId);
+        ArrayList<Page> pages = file.insertTuple(tid, t);
         // 重写了insertTuple说明markDirty还需要在buffer pool进行
         for (Page page: pages) {
             page.markDirty(true, tid);
@@ -235,12 +235,12 @@ public class BufferPool {
         // some code goes here
         // not necessary for lab1
         if (bufferPoolEdit.containsKey(pid)) {
-            HeapPage heapPage = (HeapPage) bufferPoolEdit.get(pid);
-            TransactionId tid = heapPage.isDirty();
+            Page page = bufferPoolEdit.get(pid);
+            TransactionId tid = page.isDirty();
             if (tid != null) {
-                HeapFile heapFile = (HeapFile) Database.getCatalog().getDatabaseFile(heapPage.getId().getTableId());
-                heapPage.markDirty(false, null);
-                heapFile.writePage(heapPage);
+                HeapFile heapFile = (HeapFile) Database.getCatalog().getDatabaseFile(page.getId().getTableId());
+                page.markDirty(false, null);
+                heapFile.writePage(page);
             }
         } else {
             throw new NullPointerException("page not in buffer pool");
