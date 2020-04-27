@@ -361,17 +361,18 @@ public class BTreeFile implements DbFile {
         BTreeInternalPage newPage = (BTreeInternalPage) getEmptyPage(tid, dirtypages, BTreePageId.INTERNAL);
         int middle = page.getNumEntries() / 2, count = 0;
         BTreeEntry middleEntry = null;
-        while(page.iterator().hasNext()) {
+        Iterator<BTreeEntry> iterator = page.reverseIterator();
+        while(iterator.hasNext()) {
             BTreeEntry entry = page.iterator().next();
             if (count == middle) {
                 middleEntry = entry;
                 page.deleteKeyAndRightChild(entry);
-            } else if (count > middle) {
+            } else {
                 newPage.insertEntry(entry);
                 page.deleteKeyAndRightChild(entry);
-            } else {
-                page.iterator().next();
             }
+            count++;
+
         }
         try{
             assert middleEntry != null;
