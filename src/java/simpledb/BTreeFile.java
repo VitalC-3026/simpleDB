@@ -287,7 +287,9 @@ public class BTreeFile implements DbFile {
 		BTreeInternalPage parentPage = getParentWithEmptySlots(tid, dirtypages, page.getParentId(), field);
 
         int middle = page.getNumTuples() / 2, count = 0;
-		BTreeEntry bTreeEntry = new BTreeEntry(page.getTuple(middle).getField(keyField), page.pid, newPage.pid);
+        Field middleField = page.getTuple(middle).getField(keyField);
+		BTreeEntry bTreeEntry = new BTreeEntry(middleField, page.pid, newPage.pid);
+
 		parentPage.insertEntry(bTreeEntry);
 
 		Iterator<Tuple> iterator = page.reverseIterator();
@@ -313,12 +315,18 @@ public class BTreeFile implements DbFile {
 		}
 		page.setRightSiblingId(newPage.getId());
 
+
 		// update dirty pages
 		getPage(tid, dirtypages, parentPage.pid, Permissions.READ_WRITE);
 		getPage(tid, dirtypages, newPage.pid, Permissions.READ_WRITE);
 
 		// 这个到底插入没插入page？
-		return findLeafPage(tid, dirtypages, parentPage.pid, Permissions.READ_WRITE, field);
+		if (field.compare(Op.LESS_THAN, middleField)) {
+			return page;
+		} else {
+			return newPage;
+		}
+		// return findLeafPage(tid, dirtypages, parentPage.pid, Permissions.READ_WRITE, field);
 
 	}
 	
@@ -360,28 +368,43 @@ public class BTreeFile implements DbFile {
         BTreeInternalPage parentPage = getParentWithEmptySlots(tid, dirtypages, page.getParentId(), field);
         BTreeInternalPage newPage = (BTreeInternalPage) getEmptyPage(tid, dirtypages, BTreePageId.INTERNAL);
         int middle = page.getNumEntries() / 2, count = 0;
+        // System.out.println(page.getNumEntries());
         BTreeEntry middleEntry = null;
-        Iterator<BTreeEntry> iterator = page.reverseIterator();
+        int tupleNo = -1;
+        Iterator<BTreeEntry> iterator = page.iterator();
+        Iterator<BTreeEntry> reverseIterator = page.reverseIterator();
+        /*while (reverseIterator.hasNext()) {
+        	System.out.println(reverseIterator.next());
+		}*/
         while(iterator.hasNext()) {
-            BTreeEntry entry = page.iterator().next();
+            BTreeEntry entry = iterator.next();
             if (count == middle) {
                 middleEntry = entry;
+                tupleNo = entry.getRecordId().getTupleNumber();
+				//System.out.println("MIDDLE" + entry.toString());
+                page.deleteKeyAndRightChild(entry);
+            } else if (count >= middle) {
+            	BTreeEntry newEntry = new BTreeEntry(entry.getKey(), entry.getLeftChild(), entry.getRightChild());
+				//System.out.println("RIGHT" + newEntry.toString());
+            	RecordId rid = new RecordId(newPage.pid, entry.getRecordId().getTupleNumber());
+            	newEntry.setRecordId(rid);
+                newPage.insertEntry(newEntry);
                 page.deleteKeyAndRightChild(entry);
             } else {
-                newPage.insertEntry(entry);
-                page.deleteKeyAndRightChild(entry);
-            }
+				//System.out.println("LEFT" + entry.toString());
+			}
             count++;
 
         }
-        try{
-            assert middleEntry != null;
-            middleEntry.setLeftChild(page.pid);
-            middleEntry.setRightChild(newPage.pid);
-            parentPage.updateEntry(middleEntry);
-        } catch (NullPointerException n) {
-            n.printStackTrace();
-        }
+
+		assert middleEntry != null;
+		middleEntry.setLeftChild(page.pid);
+		middleEntry.setRightChild(newPage.pid);
+		RecordId rid = new RecordId(parentPage.pid, tupleNo);
+		middleEntry.setRecordId(rid);
+		parentPage.insertEntry(middleEntry);
+
+
         updateParentPointers(tid, dirtypages, parentPage);
         // update dirty pages
         getPage(tid, dirtypages, parentPage.pid, Permissions.READ_WRITE);
