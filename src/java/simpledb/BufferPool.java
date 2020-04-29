@@ -173,6 +173,12 @@ public class BufferPool {
             page.markDirty(true, tid);
             bufferPoolEdit.put(page.getId(), page);
         }
+        BTreePageId bTreePageId = new BTreePageId(tableId, 0, BTreePageId.ROOT_PTR);
+        BTreeRootPtrPage rootPtr = (BTreeRootPtrPage) Database.getBufferPool().getPage(tid, bTreePageId, Permissions.READ_ONLY);
+        BTreePageId root = new BTreePageId(tableId, 508, BTreePageId.INTERNAL);
+        BTreePageId root = new BTreePageId(tableId, 508, BTreePageId.INTERNAL);
+        System.out.println(rootPtr.getRootId().getPageNumber());
+        System.out.println(bufferPoolEdit.containsKey(root));
     }
 
     /**
@@ -238,9 +244,9 @@ public class BufferPool {
             Page page = bufferPoolEdit.get(pid);
             TransactionId tid = page.isDirty();
             if (tid != null) {
-                HeapFile heapFile = (HeapFile) Database.getCatalog().getDatabaseFile(page.getId().getTableId());
+                DbFile file = Database.getCatalog().getDatabaseFile(page.getId().getTableId());
                 page.markDirty(false, null);
-                heapFile.writePage(page);
+                file.writePage(page);
             }
         } else {
             throw new NullPointerException("page not in buffer pool");

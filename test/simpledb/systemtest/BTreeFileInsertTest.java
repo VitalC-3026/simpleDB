@@ -241,7 +241,7 @@ public class BTreeFileInsertTest extends SimpleDbTestBase {
 		assertEquals(253, bigFile.numPages());
 
 		// now insert some random tuples and make sure we can find them
-		Random rand = new Random(1);
+		Random rand = new Random();
 		for(int i = 0; i < 100; i++) {
 			int item = rand.nextInt(BTreeUtility.MAX_RAND_VALUE);
 			Tuple t = BTreeUtility.getBTreeTuple(item, 2);
