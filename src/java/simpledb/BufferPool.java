@@ -176,7 +176,7 @@ public class BufferPool {
         BTreePageId bTreePageId = new BTreePageId(tableId, 0, BTreePageId.ROOT_PTR);
         BTreeRootPtrPage rootPtr = (BTreeRootPtrPage) Database.getBufferPool().getPage(tid, bTreePageId, Permissions.READ_ONLY);
         BTreePageId root = new BTreePageId(tableId, 508, BTreePageId.INTERNAL);
-        BTreePageId root = new BTreePageId(tableId, 508, BTreePageId.INTERNAL);
+        BTreePageId page = new BTreePageId(tableId, rootPtr.getRootId().getPageNumber(), BTreePageId.INTERNAL);
         System.out.println(rootPtr.getRootId().getPageNumber());
         System.out.println(bufferPoolEdit.containsKey(root));
     }
