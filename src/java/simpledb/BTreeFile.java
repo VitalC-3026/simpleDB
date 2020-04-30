@@ -721,12 +721,37 @@ public class BTreeFile implements DbFile {
 	 * @throws DbException
 	 */
 	protected void stealFromLeafPage(BTreeLeafPage page, BTreeLeafPage sibling,
-									 BTreeInternalPage parent, BTreeEntry entry, boolean isRightSibling) throws DbException {
+									 BTreeInternalPage parent, BTreeEntry entry, boolean isRightSibling) throws DbException, NoSuchFieldException {
 		// some code goes here
 		//
 		// Move some of the tuples from the sibling to the page so
 		// that the tuples are evenly distributed. Be sure to update
 		// the corresponding parent entry.
+		try {
+			if (page.parent == sibling.parent && page.parent == parent.pid.getPageNumber()) {
+				if (isRightSibling) {
+					Iterator<Tuple> rightIterator = sibling.iterator();
+					Field field = entry.getKey();
+					Tuple tuple = rightIterator.next();
+					entry.setKey(tuple.getField(keyField));
+					sibling.deleteTuple(tuple);
+					tuple.setField(keyField, field);
+					page.insertTuple(tuple);
+				} else {
+					Iterator<Tuple> leftIterator = sibling.reverseIterator();
+					Tuple tuple = leftIterator.next();
+					Field field = entry.getKey();
+					entry.setKey(tuple.getField(keyField));
+					sibling.deleteTuple(tuple);
+					tuple.setField(keyField, field);
+					page.insertTuple(tuple);
+				}
+			} else {
+				throw new DbException("Unexpected error that the provided page and its sibling are not children of provided parent");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
