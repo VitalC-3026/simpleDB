@@ -169,16 +169,14 @@ public class BufferPool {
         DbFile file = Database.getCatalog().getDatabaseFile(tableId);
         ArrayList<Page> pages = file.insertTuple(tid, t);
         // 重写了insertTuple说明markDirty还需要在buffer pool进行
+        BTreePageId root = new BTreePageId(tableId, 505, BTreePageId.INTERNAL);
         for (Page page: pages) {
             page.markDirty(true, tid);
             bufferPoolEdit.put(page.getId(), page);
+            flushPage(page.getId());
+
         }
-        BTreePageId bTreePageId = new BTreePageId(tableId, 0, BTreePageId.ROOT_PTR);
-        BTreeRootPtrPage rootPtr = (BTreeRootPtrPage) Database.getBufferPool().getPage(tid, bTreePageId, Permissions.READ_ONLY);
-        BTreePageId root = new BTreePageId(tableId, 508, BTreePageId.INTERNAL);
-        BTreePageId page = new BTreePageId(tableId, rootPtr.getRootId().getPageNumber(), BTreePageId.INTERNAL);
-        System.out.println(rootPtr.getRootId().getPageNumber());
-        System.out.println(bufferPoolEdit.containsKey(root));
+
     }
 
     /**

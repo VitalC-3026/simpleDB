@@ -287,7 +287,6 @@ public class BTreeFile implements DbFile {
 		BTreeLeafPage newPage = (BTreeLeafPage) getEmptyPage(tid, dirtypages, BTreePageId.LEAF);
 
 		int middle = page.getNumTuples() / 2, count = 0;
-		// Field mmiddle = page.getTuple(middle).getField(keyField);
 
 		Iterator<Tuple> iterator = page.reverseIterator();
 		while (iterator.hasNext()) {
@@ -300,11 +299,10 @@ public class BTreeFile implements DbFile {
 			}
 		}
 
+		// 错误选择了middleField
 		// Field middleField = page.getTuple(middle).getField(keyField);
 		Field middleField = iterator.next().getField(keyField);
 		BTreeEntry bTreeEntry = new BTreeEntry(middleField, page.pid, newPage.pid);
-
-		newPage.setParentId(page.getParentId());
 
 		// setSibling
 		newPage.setRightSiblingId(page.getRightSiblingId());
@@ -319,6 +317,10 @@ public class BTreeFile implements DbFile {
 
 		BTreeInternalPage parentPage = getParentWithEmptySlots(tid, dirtypages, page.getParentId(), middleField);
 		parentPage.insertEntry(bTreeEntry);
+
+		// setParentId
+		newPage.setParentId(page.getParentId());
+		page.setParentId(page.getParentId());
 
 		// update dirty pages
 		parentPage.markDirty(true, tid);
@@ -337,7 +339,7 @@ public class BTreeFile implements DbFile {
 		} else {
 			return newPage;
 		}
-		// 这个到底插入没插入page？
+		// 这个到底插入没插入page？ 插入了，但这样做效率不高
 		// return findLeafPage(tid, dirtypages, parentPage.pid, Permissions.READ_WRITE, field);
 
 	}
@@ -402,7 +404,9 @@ public class BTreeFile implements DbFile {
 		middleEntry.setRightChild(newPage.pid);
 
 		parentPage.insertEntry(middleEntry);
-
+		// setParentId
+		page.setParentId(parentPage.getId());
+		newPage.setParentId(parentPage.getId());
 
 		// update dirty pages
 		parentPage.markDirty(true, tid);
@@ -412,9 +416,11 @@ public class BTreeFile implements DbFile {
 		dirtypages.put(page.pid, page);
 		dirtypages.put(newPage.pid, newPage);
 
+
 		// update parent pointers
 		updateParentPointers(tid, dirtypages, newPage);
 		updateParentPointers(tid, dirtypages, parentPage);
+
 
 		// getPage(tid, dirtypages, parentPage.pid, Permissions.READ_WRITE);
 		// getPage(tid, dirtypages, newPage.pid, Permissions.READ_WRITE);
@@ -463,6 +469,7 @@ public class BTreeFile implements DbFile {
 			// update the previous root to now point to this new root.
 			BTreePage prevRootPage = (BTreePage)getPage(tid, dirtypages, prevRootId, Permissions.READ_WRITE);
 			prevRootPage.setParentId(parent.getId());
+
 		}
 		else {
 			// lock the parent page
