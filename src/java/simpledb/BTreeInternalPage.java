@@ -37,7 +37,7 @@ public class BTreeInternalPage extends BTreePage {
 		}
 
 		if (checkOccupancy && depth > 0) {
-			assert (getNumEntries() >= getMaxEntries() / 2);
+			assert(getNumEntries() >= getMaxEntries() / 2);
 		}
 	}
 	

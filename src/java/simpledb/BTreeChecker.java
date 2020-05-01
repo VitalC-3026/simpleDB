@@ -1,5 +1,7 @@
 package simpledb;
 
+import junit.framework.AssertionFailedError;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -77,7 +79,7 @@ public class BTreeChecker {
             TransactionAbortedException, DbException, NoSuchFieldException, IOException {
         BTreePage page = (BTreePage )bt.getPage(tid, dirtypages, pageId, Permissions.READ_ONLY);
 
-        assert(page.getParentId().equals(parentId));
+        assert page.getParentId().equals(parentId): "expected: "+ parentId + " actual" + page.getParentId();
 
         if (page.getId().pgcateg() == BTreePageId.LEAF) {
             BTreeLeafPage bpage = (BTreeLeafPage) page;
