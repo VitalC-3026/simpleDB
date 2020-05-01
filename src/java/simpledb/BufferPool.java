@@ -196,11 +196,12 @@ public class BufferPool {
             throws DbException, IOException, TransactionAbortedException, NoSuchFieldException {
         // some code goes here
         // not necessary for lab1
-        HeapFile heapFile = (HeapFile) Database.getCatalog().getDatabaseFile(t.getRecordId().getPageId().getTableId());
-        ArrayList<Page> pages = heapFile.deleteTuple(tid, t);
+        DbFile file = Database.getCatalog().getDatabaseFile(t.getRecordId().getPageId().getTableId());
+        ArrayList<Page> pages = file.deleteTuple(tid, t);
         for (Page page: pages) {
             page.markDirty(true, tid);
             bufferPoolEdit.put(page.getId(), page);
+            flushPage(page.getId());
         }
     }
 

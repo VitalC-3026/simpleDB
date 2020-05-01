@@ -76,6 +76,7 @@ public class BTreeChecker {
                                        BTreePageId parentId, boolean checkOccupancy, int depth) throws
             TransactionAbortedException, DbException, NoSuchFieldException, IOException {
         BTreePage page = (BTreePage )bt.getPage(tid, dirtypages, pageId, Permissions.READ_ONLY);
+
         assert(page.getParentId().equals(parentId));
 
         if (page.getId().pgcateg() == BTreePageId.LEAF) {
@@ -83,7 +84,6 @@ public class BTreeChecker {
             bpage.checkRep(bt.keyField(), lowerBound, upperBound, checkOccupancy, depth);
             return new SubtreeSummary(bpage, depth);
         } else if (page.getId().pgcateg() == BTreePageId.INTERNAL) {
-
             BTreeInternalPage ipage = (BTreeInternalPage) page;
             ipage.checkRep(lowerBound, upperBound, checkOccupancy, depth);
 
