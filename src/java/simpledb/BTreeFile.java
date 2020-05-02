@@ -421,10 +421,6 @@ public class BTreeFile implements DbFile {
 		updateParentPointers(tid, dirtypages, newPage);
 		updateParentPointers(tid, dirtypages, parentPage);
 
-
-		// getPage(tid, dirtypages, parentPage.pid, Permissions.READ_WRITE);
-		// getPage(tid, dirtypages, newPage.pid, Permissions.READ_WRITE);
-
 		if (field.compare(Op.LESS_THAN_OR_EQ, middleEntry.getKey())) {
 			return page;
 		} else {
@@ -748,6 +744,7 @@ public class BTreeFile implements DbFile {
 						sibling.deleteTuple(tuple);
 						page.insertTuple(tuple);
 					}
+					tuples = page.iterator();
 					entry.setKey(tuples.next().getField(keyField));
 					parent.updateEntry(entry);
 				}
@@ -838,20 +835,17 @@ public class BTreeFile implements DbFile {
 		// the corresponding parent entry. Be sure to update the parent
 		// pointers of all children in the entries that were moved.
 		try {
-			int total = leftSibling.getNumEntries() + page.getNumEntries();
 			Iterator<BTreeEntry> left = leftSibling.reverseIterator();
 			BTreeEntry right = page.iterator().next();
 			BTreeEntry entry = left.next();
 			BTreeEntry firstRightEntry = new BTreeEntry(parentEntry.getKey(), entry.getRightChild(), right.getLeftChild());
 			page.insertEntry(firstRightEntry);
 			left = leftSibling.reverseIterator();
-
+			int total = leftSibling.getNumEntries() + page.getNumEntries();
 			for (int i = page.getNumEntries(); i < total / 2 && left.hasNext(); i++) {
 				entry = left.next();
-				// BTreeEntry newEntry = new BTreeEntry(entry.getKey(), entry.getRightChild(), pre.getRightChild());
 				leftSibling.deleteKeyAndRightChild(entry);
 				page.insertEntry(entry);
-				// pre = entry;
 			}
 			entry = left.next();
 			leftSibling.deleteKeyAndRightChild(entry);
@@ -872,40 +866,6 @@ public class BTreeFile implements DbFile {
 		} catch(Exception e){
 			e.printStackTrace();
 		}
-
-
-		/*Iterator<BTreeEntry> it = leftSibling.reverseIterator();
-		BTreeEntry down = new BTreeEntry(parentEntry.getKey(), null, null);
-		down.setLeftChild(it.next().getRightChild());
-		it = page.iterator();
-		down.setRightChild(it.next().getLeftChild());
-		page.insertEntry(down);
-
-		int cnt = page.getNumEntries(), mark = (page.getNumEntries() + leftSibling.getNumEntries()) / 2;
-
-		it = leftSibling.reverseIterator();
-		while (cnt < mark) {
-			BTreeEntry bte = it.next();
-			leftSibling.deleteKeyAndRightChild(bte);
-			page.insertEntry(bte);
-			cnt++;
-		}
-
-		// upper entry
-		BTreeEntry upper = it.next();
-		leftSibling.deleteKeyAndRightChild(upper);
-		parentEntry.setKey(upper.getKey());
-		parent.updateEntry(parentEntry);
-
-		// deal with dirtyPages
-		parent.markDirty(true, tid);
-		dirtypages.put(parent.getId(), parent);
-		page.markDirty(true, tid);
-		dirtypages.put(page.getId(), page);
-		leftSibling.markDirty(true, tid);
-		dirtypages.put(leftSibling.getId(), leftSibling);
-
-		updateParentPointers(tid, dirtypages, page);*/
 
 	}
 
@@ -936,22 +896,21 @@ public class BTreeFile implements DbFile {
 		// the corresponding parent entry. Be sure to update the parent
 		// pointers of all children in the entries that were moved.
 		try {
-			int total = rightSibling.getNumEntries() + page.getNumEntries();
 			Iterator<BTreeEntry> right = rightSibling.iterator();
 			BTreeEntry left = page.reverseIterator().next();
 			BTreeEntry entry = right.next();
 			BTreeEntry firstRightEntry = new BTreeEntry(parentEntry.getKey(), left.getRightChild(), entry.getLeftChild());
 			page.insertEntry(firstRightEntry);
 			right = rightSibling.iterator();
+			int total = rightSibling.getNumEntries() + page.getNumEntries();
 			for (int i = page.getNumEntries(); i  < total / 2 && right.hasNext(); i++) {
 				entry = right.next();
-				// BTreeEntry newEntry = new BTreeEntry(entry.getKey(), pre.getLeftChild(), entry.getLeftChild());
-				rightSibling.deleteKeyAndRightChild(entry);
+				// 注意这里删的是哪一边的child
+				rightSibling.deleteKeyAndLeftChild(entry);
 				page.insertEntry(entry);
-				// pre = entry;
 			}
 			entry = right.next();
-			rightSibling.deleteKeyAndRightChild(entry);
+			rightSibling.deleteKeyAndLeftChild(entry);
 			parentEntry.setKey(entry.getKey());
 			parent.updateEntry(parentEntry);
 
@@ -969,40 +928,6 @@ public class BTreeFile implements DbFile {
 		} catch(Exception e){
 			e.printStackTrace();
 		}
-
-		/*Iterator<BTreeEntry> it = page.reverseIterator();
-		BTreeEntry down = new BTreeEntry(parentEntry.getKey(), null, null);
-		down.setLeftChild(it.next().getRightChild());
-		it = rightSibling.iterator();
-		down.setRightChild(it.next().getLeftChild());
-		page.insertEntry(down);
-
-		int cnt = page.getNumEntries(), mark = (page.getNumEntries() + rightSibling.getNumEntries()) / 2;
-
-		it = rightSibling.iterator();
-		while (cnt < mark) {
-			BTreeEntry bte = it.next();
-			rightSibling.deleteKeyAndLeftChild(bte);
-			page.insertEntry(bte);
-			cnt++;
-		}
-
-		// upper entry
-		BTreeEntry upper = it.next();
-		rightSibling.deleteKeyAndLeftChild(upper);
-		parentEntry.setKey(upper.getKey());
-		parent.updateEntry(parentEntry);
-
-
-		// deal with dirtyPages
-		parent.markDirty(true, tid);
-		dirtypages.put(parent.getId(), parent);
-		page.markDirty(true, tid);
-		dirtypages.put(page.getId(), page);
-		rightSibling.markDirty(true, tid);
-		dirtypages.put(rightSibling.getId(), rightSibling);
-
-		updateParentPointers(tid, dirtypages, page);*/
 	}
 
 	/**
@@ -1061,7 +986,6 @@ public class BTreeFile implements DbFile {
 			dirtypages.put(parent.getId(), parent);
 			dirtypages.put(rightPage.getId(), rightPage);
 
-			updateParentPointers(tid, dirtypages, parent);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -1109,16 +1033,18 @@ public class BTreeFile implements DbFile {
 				rightPage.deleteKeyAndLeftChild(entry);
 				leftPage.insertEntry(entry);
 			}
-			// 为什么只需要删除LeftChild？
-			// rightPage.deleteKeyAndRightChild(entry);
+			// 为什么只需要删除LeftChild？ 关乎为什么一直出错的问题
 			deleteParentEntry(tid, dirtypages, leftPage, parent, parentEntry);
 			setEmptyPage(tid, dirtypages, rightPage.getId().getPageNumber());
+
+			updateParentPointers(tid, dirtypages, leftPage);
+			updateParentPointers(tid, dirtypages, parent);
+
 			leftPage.markDirty(true, tid);
 			parent.markDirty(true, tid);
 			dirtypages.put(leftPage.getId(), leftPage);
 			dirtypages.put(parent.getId(), parent);
-			updateParentPointers(tid, dirtypages, leftPage);
-			updateParentPointers(tid, dirtypages, parent);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
