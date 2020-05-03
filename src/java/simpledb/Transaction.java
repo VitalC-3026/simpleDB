@@ -30,17 +30,17 @@ public class Transaction {
     }
 
     /** Finish the transaction */
-    public void commit() throws IOException {
+    public void commit() throws IOException, NoSuchFieldException {
         transactionComplete(false);
     }
 
     /** Finish the transaction */
-    public void abort() throws IOException {
+    public void abort() throws IOException, NoSuchFieldException {
         transactionComplete(true);
     }
 
     /** Handle the details of transaction commit / abort */
-    public void transactionComplete(boolean abort) throws IOException {
+    public void transactionComplete(boolean abort) throws IOException, NoSuchFieldException {
 
         if (started) {
             //write commit / abort records

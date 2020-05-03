@@ -429,7 +429,7 @@ public class Parser {
 
     public void handleTransactStatement(ZTransactStmt s)
             throws TransactionAbortedException, DbException, IOException,
-            simpledb.ParsingException, Zql.ParseException {
+            simpledb.ParsingException, Zql.ParseException, NoSuchFieldException {
         if (s.getStmtType().equals("COMMIT")) {
             if (curtrans == null)
                 throw new simpledb.ParsingException(
@@ -575,6 +575,8 @@ public class Parser {
             System.out.println("Invalid SQL expression: \n \t " + e);
         } catch (Zql.TokenMgrError e) {
             System.out.println("Invalid SQL expression: \n \t " + e);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
         }
     }
 

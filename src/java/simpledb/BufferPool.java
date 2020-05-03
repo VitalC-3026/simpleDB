@@ -76,7 +76,7 @@ public class BufferPool {
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
             throws IOException, NoSuchFieldException, DbException {
         // some code goes here
-        if (bufferPoolEdit.size() < numPages) {
+        if (bufferPoolEdit.size() <= numPages) {
             if (bufferPoolEdit.containsKey(pid)) {
                 return bufferPoolEdit.get(pid);
             } else {
@@ -84,18 +84,7 @@ public class BufferPool {
                 bufferPoolEdit.put(pid, newPage);
                 return newPage;
             }
-            /*for (Page page: bufferPool) {
-                if ((page).getId().equals(pid)) {
-                    return page;
-                }
-            }
-            // get the Page from where?
-            Page newPage = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
-            bufferPool.add(newPage);
-            return newPage;*/
         } else {
-            /*bufferPool.removeFirst();
-            bufferPool.add(Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid));*/
             evictPage();
             Page newPage = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
             bufferPoolEdit.put(pid, newPage);
@@ -169,12 +158,10 @@ public class BufferPool {
         DbFile file = Database.getCatalog().getDatabaseFile(tableId);
         ArrayList<Page> pages = file.insertTuple(tid, t);
         // 重写了insertTuple说明markDirty还需要在buffer pool进行
-        BTreePageId root = new BTreePageId(tableId, 505, BTreePageId.INTERNAL);
-        for (Page page: pages) {
-            page.markDirty(true, tid);
-            bufferPoolEdit.put(page.getId(), page);
-            flushPage(page.getId());
-
+        for (int i = 0; i < pages.size(); i++) {
+            pages.get(i).markDirty(true, tid);
+            bufferPoolEdit.put(pages.get(i).getId(), pages.get(i));
+            flushPage(pages.get(i).getId());
         }
 
     }
@@ -198,10 +185,10 @@ public class BufferPool {
         // not necessary for lab1
         DbFile file = Database.getCatalog().getDatabaseFile(t.getRecordId().getPageId().getTableId());
         ArrayList<Page> pages = file.deleteTuple(tid, t);
-        for (Page page: pages) {
-            page.markDirty(true, tid);
-            bufferPoolEdit.put(page.getId(), page);
-            flushPage(page.getId());
+        for (int i = 0; i < pages.size(); i++) {
+            pages.get(i).markDirty(true, tid);
+            bufferPoolEdit.put(pages.get(i).getId(), pages.get(i));
+            flushPage(pages.get(i).getId());
         }
     }
 
@@ -255,9 +242,17 @@ public class BufferPool {
 
     /** Write all pages of the specified transaction to disk.
      */
-    public synchronized  void flushPages(TransactionId tid) throws IOException {
+    public synchronized  void flushPages(TransactionId tid) throws IOException, NoSuchFieldException {
         // some code goes here
         // not necessary for lab1|lab2
+        Iterator<PageId> idIterator = bufferPoolEdit.keySet().iterator();
+        while (idIterator.hasNext()) {
+            PageId pageId = idIterator.next();
+            Page page = bufferPoolEdit.get(pageId);
+            if (page.isDirty().equals(tid)) {
+                flushPage(pageId);
+            }
+        }
     }
 
     /**
@@ -271,11 +266,15 @@ public class BufferPool {
         int page2evict = r.nextInt(numPages);
         Iterator<PageId> it = bufferPoolEdit.keySet().iterator();
         int i = 0;
-        while (it.hasNext() && i++ < page2evict - 1) {
+        while (it.hasNext() && i < page2evict - 1) {
             it.next();
+            i++;
         }
         PageId pageId = it.next();
-        flushPage(pageId);
+        Page page = bufferPoolEdit.get(pageId);
+        if (page != null) {
+            flushPage(pageId);
+        }
         bufferPoolEdit.remove(pageId);
     }
 }
