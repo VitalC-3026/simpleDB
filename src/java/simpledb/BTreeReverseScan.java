@@ -47,6 +47,10 @@ public class BTreeReverseScan implements OpIterator{
         reset(tableid,tableAlias);
     }
 
+    public BTreeReverseScan(TransactionId tid, int tableid, IndexPredicate ipred) throws TransactionAbortedException, IOException, DbException, NoSuchFieldException {
+        this(tid, tableid, Database.getCatalog().getTableName(tableid), ipred);
+    }
+
     /**
      * @return
      *       return the table name of the table the operator scans. This should
@@ -95,10 +99,10 @@ public class BTreeReverseScan implements OpIterator{
         this.alias = tableAlias;
         this.tableName = Database.getCatalog().getTableName(tableid);
         if(indexPredicate == null) {
-            this.it = Database.getCatalog().getDatabaseFile(tableid).iterator(tid);
+            this.it = ((BTreeFile)Database.getCatalog().getDatabaseFile(tableid)).reverseIterator(tid);
         }
         else {
-            this.it = ((BTreeFile) Database.getCatalog().getDatabaseFile(tableid)).indexIterator(tid, indexPredicate);
+            this.it = ((BTreeFile) Database.getCatalog().getDatabaseFile(tableid)).indexReverseIterator(tid, indexPredicate);
         }
         tupleDesc = Database.getCatalog().getTupleDesc(tableid);
         String[] newNames = new String[tupleDesc.numFields()];
@@ -115,26 +119,38 @@ public class BTreeReverseScan implements OpIterator{
 
     @Override
     public void open() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
+        if (isOpen)
+            throw new DbException("double open on one OpIterator.");
 
+        it.open();
+        isOpen = true;
     }
 
     @Override
     public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
-        return false;
+        if (!isOpen)
+            throw new IllegalStateException("iterator is closed");
+        return it.hasNext();
     }
 
     @Override
     public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException, NoSuchFieldException, IOException {
-        return null;
+        if (!isOpen)
+            throw new IllegalStateException("iterator is closed");
+
+        return it.next();
     }
 
     @Override
     public void rewind() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
-
+        close();
+        open();
     }
 
     @Override
     public void close() {
-
+        it.close();
+        isOpen = false;
     }
 }
+
