@@ -1536,7 +1536,7 @@ class BTreeFileReverseIterator extends AbstractDbFileIterator{
     }
 
     /**
-     * Open this iterator by getting an iterator on the first leaf page
+     * Open this iterator by getting an iterator on the last leaf page
      */
     public void open() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
         BTreeRootPtrPage rootPtr = (BTreeRootPtrPage) Database.getBufferPool().getPage(
@@ -1632,7 +1632,7 @@ class BTreeSearchIterator extends AbstractDbFileIterator {
 		else {
 			curp = f.findLeafPage(tid, root, Permissions.READ_ONLY, null);
 		}
-		it = curp.reverseIterator();
+		it = curp.iterator();
 	}
 
 	/**
@@ -1722,7 +1722,7 @@ class BTreeSearchReverseIterator extends AbstractDbFileIterator {
     }
 
     /**
-     * Open this iterator by getting an iterator on the first leaf page applicable
+     * Open this iterator by getting an iterator on the last leaf page applicable
      * for the given predicate operation
      */
     public void open() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
@@ -1741,7 +1741,7 @@ class BTreeSearchReverseIterator extends AbstractDbFileIterator {
 
     /**
      * Read the next tuple either from the current page if it has more tuples matching
-     * the predicate or from the next page by following the right sibling pointer.
+     * the predicate or from the next page by following the left sibling pointer.
      *
      * @return the next tuple matching the predicate, or null if none exists
      */
