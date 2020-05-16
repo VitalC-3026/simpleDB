@@ -88,7 +88,7 @@ public class LogFile {
     final static int LONG_SIZE = 8;
 
     long currentOffset = -1;//protected by this
-//    int pageSize;
+    //    int pageSize;
     int totalRecords = 0; // for PatchTest //protected by this
 
     HashMap<Long,Long> tidToFirstLogRecord = new HashMap<Long,Long>();
@@ -105,7 +105,7 @@ public class LogFile {
         @param f The log file's name
     */
     public LogFile(File f) throws IOException {
-	this.logFile = f;
+	    this.logFile = f;
         raf = new RandomAccessFile(f, "rw");
         recoveryUndecided = true;
 

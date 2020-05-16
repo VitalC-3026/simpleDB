@@ -1,8 +1,11 @@
 package simpledb;
 
+import com.sun.corba.se.impl.orbutil.concurrent.Sync;
+
 import java.io.*;
 
 import java.util.*;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -27,7 +30,14 @@ public class BufferPool {
     public static final int DEFAULT_PAGES = 50;
 
     private int numPages = DEFAULT_PAGES;
+
     private HashMap<PageId, Page> bufferPoolEdit;
+
+    private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
+    private LockRepository lockRepository = new LockRepository();
+
+    private int blockTime;
 
     public int getBufferPool() {
         return bufferPoolEdit.size();
@@ -42,6 +52,7 @@ public class BufferPool {
         // some code goes here
         this.numPages = numPages;
         this.bufferPoolEdit = new HashMap<>();
+        this.blockTime = 500;
     }
     
     public static int getPageSize() {
@@ -74,8 +85,20 @@ public class BufferPool {
      * @param perm the requested permissions on the page
      */
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
-            throws IOException, NoSuchFieldException, DbException {
+            throws IOException, NoSuchFieldException, DbException, InterruptedException {
         // some code goes here
+        LockRepository.LockType result = LockRepository.LockType.Block;
+
+        while(result == LockRepository.LockType.Block) {
+            if(perm.toString().equals(Permissions.READ_ONLY.toString())){
+                result = lockRepository.requireShareLock(tid, pid);
+            } else {
+                result = lockRepository.requireExclusiveLock(tid, pid);
+            }
+            Thread.sleep(blockTime);
+        }
+
+
         if (bufferPoolEdit.size() <= numPages) {
             if (bufferPoolEdit.containsKey(pid)) {
                 return bufferPoolEdit.get(pid);
