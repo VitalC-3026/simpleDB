@@ -37,7 +37,7 @@ public class BufferPool {
 
     private LockRepository lockRepository = new LockRepository();
 
-    private int blockTime;
+    private final int blockTime;
 
     public int getBufferPool() {
         return bufferPoolEdit.size();
@@ -92,8 +92,16 @@ public class BufferPool {
         while(result == LockRepository.LockType.Block) {
             if(perm.toString().equals(Permissions.READ_ONLY.toString())){
                 result = lockRepository.requireShareLock(tid, pid);
+                if (result.equals(LockRepository.LockType.ShareLock)) {
+                    lock.readLock().lock();
+                    break;
+                }
             } else {
                 result = lockRepository.requireExclusiveLock(tid, pid);
+                if (result.equals(LockRepository.LockType.ExclusiveLock)){
+                    lock.writeLock().lock();
+                    break;
+                }
             }
             Thread.sleep(blockTime);
         }
@@ -127,6 +135,7 @@ public class BufferPool {
     public void releasePage(TransactionId tid, PageId pid) {
         // some code goes here
         // not necessary for lab1|lab2
+
     }
 
     /**
@@ -143,6 +152,7 @@ public class BufferPool {
     public boolean holdsLock(TransactionId tid, PageId p) {
         // some code goes here
         // not necessary for lab1|lab2
+
         return false;
     }
 
