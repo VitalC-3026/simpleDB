@@ -97,6 +97,8 @@ public class BTreeFileEncoder {
 			return bf;
 		} catch (NoSuchFieldException e) {
 			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 
 		try {
@@ -161,7 +163,7 @@ public class BTreeFileEncoder {
 	public static BTreeFile convert(ArrayList<ArrayList<Integer>> tuples, File hFile, 
 			File bFile, int npagebytes,
 			int numFields, Type[] typeAr, char fieldSeparator, int keyField)
-			throws IOException, DbException, TransactionAbortedException, NoSuchFieldException {
+			throws IOException, DbException, TransactionAbortedException, NoSuchFieldException, InterruptedException {
 		File tempInput = File.createTempFile("tempTable", ".txt");
 		tempInput.deleteOnExit();
 		BufferedWriter bw = new BufferedWriter(new FileWriter(tempInput));
@@ -204,7 +206,7 @@ public class BTreeFileEncoder {
 	 */
 	public static BTreeFile convert(File inFile, File hFile, File bFile, int npagebytes,
 			int numFields, Type[] typeAr, char fieldSeparator, int keyField)
-			throws IOException, DbException, TransactionAbortedException, NoSuchFieldException {
+			throws IOException, DbException, TransactionAbortedException, NoSuchFieldException, InterruptedException {
 		// convert the inFile to HeapFile first.
 		HeapFileEncoder.convert(inFile, hFile, BufferPool.getPageSize(), numFields);
 		HeapFile heapf = Utility.openHeapFile(numFields, hFile);

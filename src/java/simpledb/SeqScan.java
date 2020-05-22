@@ -102,14 +102,14 @@ public class SeqScan implements OpIterator {
         return new TupleDesc(types, fieldNames);
     }
 
-    public void open() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
+    public void open() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException, InterruptedException {
         // some code goes here
         DbFile dbFile = Database.getCatalog().getDatabaseFile(tableId);
         dbFileIterator = dbFile.iterator(tid);
         dbFileIterator.open();
     }
 
-    public boolean hasNext() throws TransactionAbortedException, DbException, NoSuchFieldException, IOException {
+    public boolean hasNext() throws TransactionAbortedException, DbException, NoSuchFieldException, IOException, InterruptedException {
         // some code goes here
         if (dbFileIterator == null)
             return false;
@@ -118,7 +118,7 @@ public class SeqScan implements OpIterator {
     }
 
     public Tuple next() throws NoSuchElementException,
-            TransactionAbortedException, DbException, NoSuchFieldException, IOException {
+            TransactionAbortedException, DbException, NoSuchFieldException, IOException, InterruptedException {
         // some code goes here
         if (dbFileIterator == null) {
             throw new NoSuchElementException();
@@ -136,7 +136,7 @@ public class SeqScan implements OpIterator {
     }
 
     public void rewind() throws DbException, NoSuchElementException,
-            TransactionAbortedException, NoSuchFieldException, IOException {
+            TransactionAbortedException, NoSuchFieldException, IOException, InterruptedException {
         // some code goes here
         close();
         open();

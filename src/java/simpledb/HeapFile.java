@@ -111,7 +111,7 @@ public class HeapFile implements DbFile {
 
     // see DbFile.java for javadocs
     public ArrayList<Page> insertTuple(TransactionId tid, Tuple t)
-            throws DbException, IOException, TransactionAbortedException, NoSuchFieldException {
+            throws DbException, IOException, TransactionAbortedException, NoSuchFieldException, InterruptedException {
         // some code goes here
         // not necessary for lab1
         ArrayList<Page> pages = new ArrayList<>();
@@ -140,7 +140,7 @@ public class HeapFile implements DbFile {
 
     // see DbFile.java for javadocs
     public ArrayList<Page> deleteTuple(TransactionId tid, Tuple t) throws DbException,
-            TransactionAbortedException, IOException, NoSuchFieldException {
+            TransactionAbortedException, IOException, NoSuchFieldException, InterruptedException {
         // some code goes here
         // not necessary for lab1
         ArrayList<Page> pages = new ArrayList<>();
@@ -233,14 +233,14 @@ public class HeapFile implements DbFile {
          }
 
          @Override
-         public void open() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
+         public void open() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException, InterruptedException {
              HeapPageId heapPageId = new HeapPageId(getId(), pagePosition);
              HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid, heapPageId, Permissions.READ_ONLY);
              tupleIterator = heapPage.iterator();
          }
 
          @Override
-         public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
+         public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException, InterruptedException {
              if (tupleIterator == null) {
                  return false;
              }
@@ -258,13 +258,13 @@ public class HeapFile implements DbFile {
          }
 
          @Override
-         public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException, NoSuchFieldException, IOException {
+         public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException, NoSuchFieldException, IOException, InterruptedException {
              if (!hasNext()) throw new NoSuchElementException();
              return tupleIterator.next();
          }
 
          @Override
-         public void rewind() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
+         public void rewind() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException, InterruptedException {
             close();
             open();
          }

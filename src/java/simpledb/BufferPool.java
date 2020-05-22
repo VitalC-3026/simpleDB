@@ -93,13 +93,11 @@ public class BufferPool {
             if(perm.toString().equals(Permissions.READ_ONLY.toString())){
                 result = lockRepository.requireShareLock(tid, pid);
                 if (result.equals(LockRepository.LockType.ShareLock)) {
-                    lock.readLock().lock();
                     break;
                 }
             } else {
                 result = lockRepository.requireExclusiveLock(tid, pid);
                 if (result.equals(LockRepository.LockType.ExclusiveLock)){
-                    lock.writeLock().lock();
                     break;
                 }
             }
@@ -132,10 +130,12 @@ public class BufferPool {
      * @param tid the ID of the transaction requesting the unlock
      * @param pid the ID of the page to unlock
      */
-    public void releasePage(TransactionId tid, PageId pid) {
+    public void releasePage(TransactionId tid, PageId pid) throws DbException {
         // some code goes here
         // not necessary for lab1|lab2
-
+        if (holdsLock(tid, pid)) {
+            lockRepository.unlock(tid, pid);
+        }
     }
 
     /**
@@ -152,8 +152,12 @@ public class BufferPool {
     public boolean holdsLock(TransactionId tid, PageId p) {
         // some code goes here
         // not necessary for lab1|lab2
-
-        return false;
+        LockRepository.LockType res = lockRepository.isHoldingLock(tid, p);
+        if (res.equals(LockRepository.LockType.None)) {
+            return false;
+        } else{
+            return true;
+        }
     }
 
     /**
@@ -185,7 +189,7 @@ public class BufferPool {
      * @param t the tuple to add
      */
     public void insertTuple(TransactionId tid, int tableId, Tuple t)
-            throws DbException, IOException, TransactionAbortedException, NoSuchFieldException {
+            throws DbException, IOException, TransactionAbortedException, NoSuchFieldException, InterruptedException {
         // some code goes here
         // not necessary for lab1
         DbFile file = Database.getCatalog().getDatabaseFile(tableId);
@@ -213,7 +217,7 @@ public class BufferPool {
      * @param t the tuple to delete
      */
     public  void deleteTuple(TransactionId tid, Tuple t)
-            throws DbException, IOException, TransactionAbortedException, NoSuchFieldException {
+            throws DbException, IOException, TransactionAbortedException, NoSuchFieldException, InterruptedException {
         // some code goes here
         // not necessary for lab1
         DbFile file = Database.getCatalog().getDatabaseFile(t.getRecordId().getPageId().getTableId());

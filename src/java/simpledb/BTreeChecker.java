@@ -60,7 +60,7 @@ public class BTreeChecker {
      */
     public static void checkRep(BTreeFile bt, TransactionId tid, HashMap<PageId, Page> dirtypages,
                                 boolean checkOccupancy) throws
-            DbException, IOException, TransactionAbortedException, NoSuchFieldException {
+            DbException, IOException, TransactionAbortedException, NoSuchFieldException, InterruptedException {
         BTreeRootPtrPage rtptr = bt.getRootPtrPage(tid, dirtypages);
 
         if (rtptr.getRootId() == null) { // non existent root is a legal state.
@@ -76,8 +76,8 @@ public class BTreeChecker {
     static SubtreeSummary checkSubTree(BTreeFile bt, TransactionId tid, HashMap<PageId, Page> dirtypages,
                                        BTreePageId pageId, Field lowerBound, Field upperBound,
                                        BTreePageId parentId, boolean checkOccupancy, int depth) throws
-            TransactionAbortedException, DbException, NoSuchFieldException, IOException {
-        BTreePage page = (BTreePage )bt.getPage(tid, dirtypages, pageId, Permissions.READ_ONLY);
+            TransactionAbortedException, DbException, NoSuchFieldException, IOException, InterruptedException {
+        BTreePage page = (BTreePage)bt.getPage(tid, dirtypages, pageId, Permissions.READ_ONLY);
 
         assert page.getParentId().equals(parentId): "expected: "+ parentId + " actual" + page.getParentId();
 

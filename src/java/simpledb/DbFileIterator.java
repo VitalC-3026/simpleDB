@@ -12,11 +12,11 @@ public interface DbFileIterator{
      * @throws DbException when there are problems opening/accessing the database.
      */
     public void open()
-            throws DbException, TransactionAbortedException, IOException, NoSuchFieldException;
+            throws DbException, TransactionAbortedException, IOException, NoSuchFieldException, InterruptedException;
 
     /** @return true if there are more tuples available, false if no more tuples or iterator isn't open. */
     public boolean hasNext()
-            throws DbException, TransactionAbortedException, NoSuchFieldException, IOException;
+            throws DbException, TransactionAbortedException, NoSuchFieldException, IOException, InterruptedException;
 
     /**
      * Gets the next tuple from the operator (typically implementing by reading
@@ -26,13 +26,13 @@ public interface DbFileIterator{
      * @throws NoSuchElementException if there are no more tuples
      */
     public Tuple next()
-            throws DbException, TransactionAbortedException, NoSuchElementException, NoSuchFieldException, IOException;
+            throws DbException, TransactionAbortedException, NoSuchElementException, NoSuchFieldException, IOException, InterruptedException;
 
     /**
      * Resets the iterator to the start.
      * @throws DbException When rewind is unsupported.
      */
-    public void rewind() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException;
+    public void rewind() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException, InterruptedException;
 
     /**
      * Closes the iterator.

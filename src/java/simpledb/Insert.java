@@ -51,7 +51,7 @@ public class Insert extends Operator {
         return reTuple.getTupleDesc();
     }
 
-    public void open() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
+    public void open() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException, InterruptedException {
         // some code goes here
         super.open();
         child.open();
@@ -65,7 +65,7 @@ public class Insert extends Operator {
         super.close();
     }
 
-    public void rewind() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
+    public void rewind() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException, InterruptedException {
         // some code goes here
         close();
         open();
@@ -84,7 +84,7 @@ public class Insert extends Operator {
      * @see Database#getBufferPool
      * @see BufferPool#insertTuple
      */
-    protected Tuple fetchNext() throws TransactionAbortedException, DbException, NoSuchFieldException, IOException {
+    protected Tuple fetchNext() throws TransactionAbortedException, DbException, NoSuchFieldException, IOException, InterruptedException {
         // some code goes here
         if (childPosition < children.size()) {
             child = children.get(childPosition);

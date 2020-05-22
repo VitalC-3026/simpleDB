@@ -54,7 +54,7 @@ public class HashEquiJoin extends Operator {
     HashMap<Object, ArrayList<Tuple>> map = new HashMap<Object, ArrayList<Tuple>>();
     public final static int MAP_SIZE = 20000;
 
-    private boolean loadMap() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
+    private boolean loadMap() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException, InterruptedException {
         int cnt = 0;
         map.clear();
         while (child1.hasNext()) {
@@ -73,7 +73,7 @@ public class HashEquiJoin extends Operator {
     }
 
     public void open() throws DbException, NoSuchElementException,
-            TransactionAbortedException, NoSuchFieldException, IOException {
+            TransactionAbortedException, NoSuchFieldException, IOException, InterruptedException {
         child1.open();
         child2.open();
         loadMap();
@@ -90,7 +90,7 @@ public class HashEquiJoin extends Operator {
         this.map.clear();
     }
 
-    public void rewind() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
+    public void rewind() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException, InterruptedException {
         child1.rewind();
         child2.rewind();
     }
@@ -131,7 +131,7 @@ public class HashEquiJoin extends Operator {
 
     }
 
-    protected Tuple fetchNext() throws TransactionAbortedException, DbException, NoSuchFieldException, IOException {
+    protected Tuple fetchNext() throws TransactionAbortedException, DbException, NoSuchFieldException, IOException, InterruptedException {
         if (listIt != null && listIt.hasNext()) {
             return processList();
         }

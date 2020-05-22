@@ -118,7 +118,7 @@ public class BTreeReverseScan implements OpIterator{
     }
 
     @Override
-    public void open() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
+    public void open() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException, InterruptedException {
         if (isOpen)
             throw new DbException("double open on one OpIterator.");
 
@@ -127,14 +127,14 @@ public class BTreeReverseScan implements OpIterator{
     }
 
     @Override
-    public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
+    public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException, InterruptedException {
         if (!isOpen)
             throw new IllegalStateException("iterator is closed");
         return it.hasNext();
     }
 
     @Override
-    public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException, NoSuchFieldException, IOException {
+    public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException, NoSuchFieldException, IOException, InterruptedException {
         if (!isOpen)
             throw new IllegalStateException("iterator is closed");
 
@@ -142,7 +142,7 @@ public class BTreeReverseScan implements OpIterator{
     }
 
     @Override
-    public void rewind() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
+    public void rewind() throws DbException, TransactionAbortedException, IOException, NoSuchFieldException, InterruptedException {
         close();
         open();
     }

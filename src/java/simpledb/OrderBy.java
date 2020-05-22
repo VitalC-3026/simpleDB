@@ -55,7 +55,7 @@ public class OrderBy extends Operator {
     }
 
     public void open() throws DbException, NoSuchElementException,
-            TransactionAbortedException, NoSuchFieldException, IOException {
+            TransactionAbortedException, NoSuchFieldException, IOException, InterruptedException {
         child.open();
         // load all the tuples in a collection, and sort it
         while (child.hasNext())

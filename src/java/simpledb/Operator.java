@@ -12,7 +12,7 @@ public abstract class Operator implements OpIterator {
 
     private static final long serialVersionUID = 1L;
 
-    public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
+    public boolean hasNext() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException, InterruptedException {
         if (!this.open)
             throw new IllegalStateException("Operator not yet open");
         
@@ -22,7 +22,7 @@ public abstract class Operator implements OpIterator {
     }
 
     public Tuple next() throws DbException, TransactionAbortedException,
-            NoSuchElementException, NoSuchFieldException, IOException {
+            NoSuchElementException, NoSuchFieldException, IOException, InterruptedException {
         if (next == null) {
             next = fetchNext();
             if (next == null)
@@ -43,7 +43,7 @@ public abstract class Operator implements OpIterator {
      *         finished.
      */
     protected abstract Tuple fetchNext() throws DbException,
-            TransactionAbortedException, NoSuchFieldException, IOException;
+            TransactionAbortedException, NoSuchFieldException, IOException, InterruptedException;
 
     /**
      * Closes this iterator. If overridden by a subclass, they should call
@@ -59,7 +59,7 @@ public abstract class Operator implements OpIterator {
     private boolean open = false;
     private int estimatedCardinality = 0;
 
-    public void open() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException {
+    public void open() throws DbException, TransactionAbortedException, NoSuchFieldException, IOException, InterruptedException {
         this.open = true;
     }
 

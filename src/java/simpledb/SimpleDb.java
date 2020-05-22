@@ -3,7 +3,7 @@ import java.io.*;
 
 public class SimpleDb {
     public static void main (String args[])
-            throws DbException, TransactionAbortedException, IOException, NoSuchFieldException {
+            throws DbException, TransactionAbortedException, IOException, NoSuchFieldException, InterruptedException {
         // convert a file
         if(args[0].equals("convert")) {
         try {
