@@ -87,21 +87,22 @@ public class BufferPool {
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
             throws IOException, NoSuchFieldException, DbException, InterruptedException {
         // some code goes here
-        LockRepository.LockType result = LockRepository.LockType.Block;
-
-        while(result == LockRepository.LockType.Block) {
-            if(perm.toString().equals(Permissions.READ_ONLY.toString())){
-                result = lockRepository.requireShareLock(tid, pid);
-                if (result.equals(LockRepository.LockType.ShareLock)) {
-                    break;
-                }
-            } else {
-                result = lockRepository.requireExclusiveLock(tid, pid);
-                if (result.equals(LockRepository.LockType.ExclusiveLock)){
-                    break;
-                }
-            }
+        LockRepository.LockType result = null;
+        if(perm.toString().equals(Permissions.READ_ONLY.toString())) {
+            result = lockRepository.requireShareLock(tid, pid, perm);
+        } else {
+            result = lockRepository.requireExclusiveLock(tid, pid, perm);
+        }
+        System.out.println(tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
+        while(result.equals(LockRepository.LockType.Block)) {
             Thread.sleep(blockTime);
+            System.out.println("sleeping: "+tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
+            if(perm.toString().equals(Permissions.READ_ONLY.toString())){
+                result = lockRepository.requireShareLock(tid, pid, perm);
+            } else {
+                result = lockRepository.requireExclusiveLock(tid, pid, perm);
+            }
+            System.out.println("another try: "+tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
         }
 
 
