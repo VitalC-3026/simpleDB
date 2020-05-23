@@ -36,6 +36,7 @@ public class LockRepository {
     }
 
     public synchronized LockType requireShareLock(TransactionId tid, PageId pid, Permissions permissions) throws DbException {
+        System.out.println("requireExclusiveLock");
         switch (isHoldingLock(tid, pid)) {
             case ShareLock: {
                 System.out.println("ShareLock HOLDING");
@@ -116,6 +117,7 @@ public class LockRepository {
     }
 
     public synchronized LockType requireExclusiveLock(TransactionId tid, PageId pid, Permissions permissions) throws DbException {
+        System.out.println("requireExclusiveLock");
         switch (isHoldingLock(tid, pid)) {
             case ExclusiveLock: {
                 System.out.println("ExclusiveLock HOLDING");
