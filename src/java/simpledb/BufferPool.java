@@ -134,8 +134,8 @@ public class BufferPool {
     public void releasePage(TransactionId tid, PageId pid) throws DbException {
         // some code goes here
         // not necessary for lab1|lab2
-        if (holdsLock(tid, pid)) {
-            lockRepository.unlock(tid, pid);
+        if (!lockRepository.unlock(tid, pid)) {
+            throw new DbException("release a non-existent lock");
         }
     }
 
@@ -154,11 +154,7 @@ public class BufferPool {
         // some code goes here
         // not necessary for lab1|lab2
         LockRepository.LockType res = lockRepository.isHoldingLock(tid, p);
-        if (res.equals(LockRepository.LockType.None)) {
-            return false;
-        } else{
-            return true;
-        }
+        return !res.equals(LockRepository.LockType.None);
     }
 
     /**

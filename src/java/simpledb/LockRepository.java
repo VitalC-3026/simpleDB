@@ -39,6 +39,8 @@ public class LockRepository {
         System.out.println("requireExclusiveLock");
         switch (isHoldingLock(tid, pid)) {
             case ShareLock: {
+                // 如果当前的事务tid已经获得了对pid的读锁，那么如果pid仅有一个这样的锁，那么就将这个共享锁变成排它锁
+                // 如果pid不仅有当前tid的共享锁，那么就直接返回共享锁，说明可以获取到该锁
                 System.out.println("ShareLock HOLDING");
                 List<LockState> lockStateList = locksList.get(pid);
                 if (lockStateList.size() == 1) {
@@ -52,6 +54,7 @@ public class LockRepository {
                 return LockType.ShareLock;
             }
             case ExclusiveLock: {
+                // 如果当前的tid已经获得了对pid的排它锁，那也就是可以获得对pid的共享锁，不需要阻塞
                 System.out.println("ExclusiveLock HOLDING");
                 List<LockState> lockStateList = locksList.get(pid);
                 lockStateList.add(new LockState(tid, LockType.ShareLock, permissions));
@@ -86,6 +89,10 @@ public class LockRepository {
                     waitingList.put(pid, states);
                     return lock(tid, pid, LockType.ShareLock);
                 }*/
+                // 如果当前tid没有对pid获取到任何锁，会有3种情况：
+                // ①pid上有一个排它锁，但权限为READ_ONLY，则将这个锁改回共享锁，并允许tid获取到pid的共享锁
+                // ②pid上只要有一个权限为READ_WRITE的排它锁，那么当前tid阻塞
+                // ③pid上有不同tid上需要的共享锁，那么当前tid也可以获得pid的共享锁
                 System.out.println("NoLock HOLDING");
                 List<LockState> lockStateList = locksList.get(pid);
                 if (lockStateList == null || lockStateList.size() == 0){
@@ -120,15 +127,21 @@ public class LockRepository {
         System.out.println("requireExclusiveLock");
         switch (isHoldingLock(tid, pid)) {
             case ExclusiveLock: {
+                // 如果当前tid已经拥有了pid的排它锁，那么返回该锁即可
                 System.out.println("ExclusiveLock HOLDING");
                 return LockType.ExclusiveLock;}
             case ShareLock: {
+                // 如果当前tid拥有的是pid的共享锁，那么也允许当前tid获取pid的排它锁
                 System.out.println("ShareLock HOLDING");
                 List<LockState> states = locksList.get(pid);
                 states.add(new LockState(tid, LockType.ExclusiveLock, permissions));
                 return LockType.ExclusiveLock;
             }
             case None: {
+                // 如果当前tid没有拥有pid的锁，那会出现以下几种情况：
+                // ①pid上没有任何锁，那就可以放心大胆地允许tid获取pid的排它锁
+                // ②pid上有其他tid上的共享锁或者是有READ_ONLY权限的排它锁，此时tid只能阻塞
+                // ③pid上有其他tid上获取的排它锁，阻塞？
                 System.out.println("NoLock HOLDING");
                 List<LockState> states = locksList.get(pid);
                 if (states == null || states.size() == 0){
@@ -176,9 +189,9 @@ public class LockRepository {
         return LockType.None;
     }*/
 
-    public synchronized void unlock(TransactionId tid, PageId pid) throws DbException {
+    public synchronized boolean unlock(TransactionId tid, PageId pid){
         if (isHoldingLock(tid, pid).equals(LockType.None)) {
-            throw new DbException("release a none-existent lock");
+            return false;
         }
         List<LockState> states = locksList.get(pid);
         for (int i = 0; i < states.size(); i++) {
@@ -187,7 +200,7 @@ public class LockRepository {
                 break;
             }
         }
-
+        return true;
     }
 
     public synchronized LockType lock(TransactionId tid, PageId pid, LockType type, Permissions permissions) {
