@@ -144,9 +144,10 @@ public class BufferPool {
      *
      * @param tid the ID of the transaction requesting the unlock
      */
-    public void transactionComplete(TransactionId tid) throws IOException {
+    public synchronized void transactionComplete(TransactionId tid) throws IOException, NoSuchFieldException {
         // some code goes here
         // not necessary for lab1|lab2
+        transactionComplete(tid, true);
     }
 
     /** Return true if the specified transaction has a lock on the specified page */
@@ -164,10 +165,38 @@ public class BufferPool {
      * @param tid the ID of the transaction requesting the unlock
      * @param commit a flag indicating whether we should commit or abort
      */
-    public void transactionComplete(TransactionId tid, boolean commit)
-        throws IOException {
+    public synchronized void transactionComplete(TransactionId tid, boolean commit)
+            throws IOException, NoSuchFieldException {
         // some code goes here
         // not necessary for lab1|lab2
+        // 将当前tid下所有的锁去掉
+        ArrayList<PageId> pages = lockRepository.releaseAllLock(tid);
+        if (commit) {
+            // 将当前tid下所有的page写入磁盘
+            for (PageId pageId: pages) {
+                if (bufferPoolEdit.containsKey(pageId)) {
+                    DbFile file = Database.getCatalog().getDatabaseFile(pageId.getTableId());
+                    Page page = bufferPoolEdit.get(pageId);
+                    page.markDirty(false, tid);
+                    file.writePage(page);
+                } else {
+                    throw new IllegalArgumentException("Dirty page is not in the buffer pool");
+                }
+            }
+
+        } else {
+            // 将当前tid下所有的page都从磁盘中重新获取
+            for (PageId pageId: pages) {
+                if (bufferPoolEdit.containsKey(pageId)) {
+                    DbFile file = Database.getCatalog().getDatabaseFile(pageId.getTableId());
+                    Page page = file.readPage(pageId);
+                    bufferPoolEdit.replace(pageId, page);
+                } else {
+                    throw new IllegalArgumentException("Dirty page is not in the buffer pool");
+                }
+            }
+        }
+
     }
 
     /**
@@ -195,7 +224,7 @@ public class BufferPool {
         for (int i = 0; i < pages.size(); i++) {
             pages.get(i).markDirty(true, tid);
             bufferPoolEdit.put(pages.get(i).getId(), pages.get(i));
-            flushPage(pages.get(i).getId());
+            // flushPage(pages.get(i).getId());
         }
 
     }
@@ -222,7 +251,7 @@ public class BufferPool {
         for (int i = 0; i < pages.size(); i++) {
             pages.get(i).markDirty(true, tid);
             bufferPoolEdit.put(pages.get(i).getId(), pages.get(i));
-            flushPage(pages.get(i).getId());
+            // flushPage(pages.get(i).getId());
         }
     }
 
@@ -296,7 +325,7 @@ public class BufferPool {
     private synchronized void evictPage() throws DbException, IOException, NoSuchFieldException {
         // some code goes here
         // not necessary for lab1
-        Random r = new Random();
+        /*Random r = new Random();
         int page2evict = r.nextInt(numPages);
         Iterator<PageId> it = bufferPoolEdit.keySet().iterator();
         int i = 0;
@@ -309,6 +338,15 @@ public class BufferPool {
         if (page != null) {
             flushPage(pageId);
         }
-        bufferPoolEdit.remove(pageId);
+        bufferPoolEdit.remove(pageId);*/
+        Iterator<PageId> it = bufferPoolEdit.keySet().iterator();
+        while (it.hasNext()) {
+            if (((HeapPage) it.next()).isDirty() == null) {
+                break;
+            }
+        }
+        if (!it.hasNext()) {
+            throw new DbException("all pages in the buffer pool are dirty");
+        }
     }
 }

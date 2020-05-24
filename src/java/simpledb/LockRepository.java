@@ -250,5 +250,19 @@ public class LockRepository {
         }
     }*/
 
+    public synchronized ArrayList<PageId> releaseAllLock(TransactionId tid) {
+        ArrayList<PageId> pages = new ArrayList<>();
+        for (PageId pageId : locksList.keySet()) {
+            Iterator<LockState> states = locksList.get(pageId).iterator();
+            while (states.hasNext()) {
+                LockState state = states.next();
+                if (state.tid.equals(tid)) {
+                    states.remove();
+                    pages.add(pageId);
+                }
+            }
+        }
+        return pages;
+    }
 }
 
