@@ -106,7 +106,7 @@ public class BufferPool {
         }
 
 
-        if (bufferPoolEdit.size() <= numPages) {
+        if (bufferPoolEdit.size() < numPages) {
             if (bufferPoolEdit.containsKey(pid)) {
                 return bufferPoolEdit.get(pid);
             } else {
@@ -173,7 +173,8 @@ public class BufferPool {
         ArrayList<PageId> pages = lockRepository.releaseAllLock(tid);
         if (commit) {
             // 将当前tid下所有的page写入磁盘
-            for (PageId pageId: pages) {
+            flushPages(tid);
+            /*for (PageId pageId: pages) {
                 if (bufferPoolEdit.containsKey(pageId)) {
                     DbFile file = Database.getCatalog().getDatabaseFile(pageId.getTableId());
                     Page page = bufferPoolEdit.get(pageId);
@@ -182,7 +183,7 @@ public class BufferPool {
                 } else {
                     throw new IllegalArgumentException("Dirty page is not in the buffer pool");
                 }
-            }
+            }*/
 
         } else {
             // 将当前tid下所有的page都从磁盘中重新获取
@@ -224,7 +225,7 @@ public class BufferPool {
         for (int i = 0; i < pages.size(); i++) {
             pages.get(i).markDirty(true, tid);
             bufferPoolEdit.put(pages.get(i).getId(), pages.get(i));
-            // flushPage(pages.get(i).getId());
+            flushPage(pages.get(i).getId());
         }
 
     }
@@ -335,18 +336,33 @@ public class BufferPool {
         }
         PageId pageId = it.next();
         Page page = bufferPoolEdit.get(pageId);
-        if (page != null) {
+        if (page.isDirty() == null) {
             flushPage(pageId);
-        }
-        bufferPoolEdit.remove(pageId);*/
+            bufferPoolEdit.remove(pageId);
+        } else {
+            it = bufferPoolEdit.keySet().iterator();
+            while (it.hasNext()) {
+                page = bufferPoolEdit.get(it.next());
+                if (page.isDirty() == null) {
+                    flushPage(pageId);
+                    bufferPoolEdit.remove(pageId);
+                    return;
+                }
+            }
+            if (!it.hasNext()) {
+                throw new DbException("all pages in the buffer pool are dirty");
+            }
+        }*/
         Iterator<PageId> it = bufferPoolEdit.keySet().iterator();
-        while (it.hasNext()) {
-            if (((HeapPage) it.next()).isDirty() == null) {
-                break;
+        while(it.hasNext()) {
+            PageId pageId = it.next();
+            Page page = bufferPoolEdit.get(pageId);
+            if (page.isDirty() == null) {
+                flushPage(pageId);
+                it.remove();
+                return;
             }
         }
-        if (!it.hasNext()) {
-            throw new DbException("all pages in the buffer pool are dirty");
-        }
+        throw new DbException("all pages in the buffer pool are dirty");
     }
 }

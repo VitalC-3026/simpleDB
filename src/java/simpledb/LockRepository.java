@@ -36,12 +36,12 @@ public class LockRepository {
     }
 
     public synchronized LockType requireShareLock(TransactionId tid, PageId pid, Permissions permissions) throws DbException {
-        System.out.println("requireExclusiveLock");
+        // System.out.println("requireExclusiveLock");
         switch (isHoldingLock(tid, pid)) {
             case ShareLock: {
                 // 如果当前的事务tid已经获得了对pid的读锁，那么如果pid仅有一个这样的锁，那么就将这个共享锁变成排它锁
                 // 如果pid不仅有当前tid的共享锁，那么就直接返回共享锁，说明可以获取到该锁
-                System.out.println("ShareLock HOLDING");
+                // System.out.println("ShareLock HOLDING");
                 List<LockState> lockStateList = locksList.get(pid);
                 if (lockStateList.size() == 1) {
                     LockState state = lockStateList.iterator().next();
@@ -55,7 +55,7 @@ public class LockRepository {
             }
             case ExclusiveLock: {
                 // 如果当前的tid已经获得了对pid的排它锁，那也就是可以获得对pid的共享锁，不需要阻塞
-                System.out.println("ExclusiveLock HOLDING");
+                // System.out.println("ExclusiveLock HOLDING");
                 List<LockState> lockStateList = locksList.get(pid);
                 lockStateList.add(new LockState(tid, LockType.ShareLock, permissions));
                 return LockType.ExclusiveLock;
@@ -93,7 +93,7 @@ public class LockRepository {
                 // ①pid上有一个排它锁，但权限为READ_ONLY，则将这个锁改回共享锁，并允许tid获取到pid的共享锁
                 // ②pid上只要有一个权限为READ_WRITE的排它锁，那么当前tid阻塞
                 // ③pid上有不同tid上需要的共享锁，那么当前tid也可以获得pid的共享锁
-                System.out.println("NoLock HOLDING");
+                // System.out.println("NoLock HOLDING");
                 List<LockState> lockStateList = locksList.get(pid);
                 if (lockStateList == null || lockStateList.size() == 0){
                     return lock(tid, pid, LockType.ShareLock, permissions);
@@ -124,15 +124,15 @@ public class LockRepository {
     }
 
     public synchronized LockType requireExclusiveLock(TransactionId tid, PageId pid, Permissions permissions) throws DbException {
-        System.out.println("requireExclusiveLock");
+        // System.out.println("requireExclusiveLock");
         switch (isHoldingLock(tid, pid)) {
             case ExclusiveLock: {
                 // 如果当前tid已经拥有了pid的排它锁，那么返回该锁即可
-                System.out.println("ExclusiveLock HOLDING");
+                // System.out.println("ExclusiveLock HOLDING");
                 return LockType.ExclusiveLock;}
             case ShareLock: {
                 // 如果当前tid拥有的是pid的共享锁，那么也允许当前tid获取pid的排它锁
-                System.out.println("ShareLock HOLDING");
+                // System.out.println("ShareLock HOLDING");
                 List<LockState> states = locksList.get(pid);
                 states.add(new LockState(tid, LockType.ExclusiveLock, permissions));
                 return LockType.ExclusiveLock;
@@ -142,7 +142,7 @@ public class LockRepository {
                 // ①pid上没有任何锁，那就可以放心大胆地允许tid获取pid的排它锁
                 // ②pid上有其他tid上的共享锁或者是有READ_ONLY权限的排它锁，此时tid只能阻塞
                 // ③pid上有其他tid上获取的排它锁，阻塞？
-                System.out.println("NoLock HOLDING");
+                // System.out.println("NoLock HOLDING");
                 List<LockState> states = locksList.get(pid);
                 if (states == null || states.size() == 0){
                     return lock(tid, pid, LockType.ExclusiveLock, permissions);
@@ -210,24 +210,24 @@ public class LockRepository {
                 states = new ArrayList<>();
                 states.add(new LockState(tid, LockType.ExclusiveLock, permissions));
                 locksList.replace(pid, states);
-                System.out.println("Exclusive");
+                // System.out.println("Exclusive");
                 return LockType.ExclusiveLock;
             } else if (states.size() == 1 && states.iterator().next().tid.equals(tid)) {
                 states.iterator().next().lockType = LockType.ExclusiveLock;
                 locksList.replace(pid, states);
-                System.out.println("Exclusive");
+                // System.out.println("Exclusive");
                 return LockType.ExclusiveLock;
             } else {
                 states.add(new LockState(tid, type, permissions));
                 locksList.replace(pid, states);
-                System.out.println(type);
+                // System.out.println(type);
                 return type;
             }
         } else {
             List<LockState> states = new ArrayList<>();
             states.add(new LockState(tid, LockType.ExclusiveLock, permissions));
             locksList.put(pid, states);
-            System.out.println("Exclusive");
+            // System.out.println("Exclusive");
             return LockType.ExclusiveLock;
         }
     }
