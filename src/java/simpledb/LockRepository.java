@@ -58,7 +58,8 @@ public class LockRepository {
                 // System.out.println("ExclusiveLock HOLDING");
                 List<LockState> lockStateList = locksList.get(pid);
                 lockStateList.add(new LockState(tid, LockType.ShareLock, permissions));
-                return LockType.ExclusiveLock;
+                locksList.replace(pid, lockStateList);
+                return LockType.ShareLock;
             }
             case None: {
                 /*System.out.println("None");

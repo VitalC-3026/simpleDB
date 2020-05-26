@@ -104,8 +104,18 @@ public class BufferPool {
             }
             System.out.println("another try: "+tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
         }
-
-
+        if (result.equals(LockRepository.LockType.ShareLock)) {
+            Iterator<PageId> it = bufferPoolEdit.keySet().iterator();
+            while (it.hasNext()) {
+                Page page = bufferPoolEdit.get(it.next());
+                System.out.println(page.getId());
+                System.out.println(page.isDirty());
+            }
+        }
+        // System.out.println(bufferPoolEdit.values());
+        if (bufferPoolEdit.containsKey(pid)) {
+            return bufferPoolEdit.get(pid);
+        }
         if (bufferPoolEdit.size() < numPages) {
             if (bufferPoolEdit.containsKey(pid)) {
                 return bufferPoolEdit.get(pid);
@@ -192,8 +202,6 @@ public class BufferPool {
                     DbFile file = Database.getCatalog().getDatabaseFile(pageId.getTableId());
                     Page page = file.readPage(pageId);
                     bufferPoolEdit.replace(pageId, page);
-                } else {
-                    throw new IllegalArgumentException("Dirty page is not in the buffer pool");
                 }
             }
         }
@@ -225,7 +233,7 @@ public class BufferPool {
         for (int i = 0; i < pages.size(); i++) {
             pages.get(i).markDirty(true, tid);
             bufferPoolEdit.put(pages.get(i).getId(), pages.get(i));
-            flushPage(pages.get(i).getId());
+            // flushPage(pages.get(i).getId());
         }
 
     }
@@ -313,7 +321,7 @@ public class BufferPool {
         while (idIterator.hasNext()) {
             PageId pageId = idIterator.next();
             Page page = bufferPoolEdit.get(pageId);
-            if (page.isDirty().equals(tid)) {
+            if (tid.equals(page.isDirty())) {
                 flushPage(pageId);
             }
         }
@@ -359,6 +367,7 @@ public class BufferPool {
             Page page = bufferPoolEdit.get(pageId);
             if (page.isDirty() == null) {
                 flushPage(pageId);
+                System.out.println("evict:"+pageId);
                 it.remove();
                 return;
             }

@@ -250,6 +250,7 @@ public class HeapFile implements DbFile {
              if(pagePosition < numPages() - 1) {
                  HeapPageId heapPageId = new HeapPageId(getId(), ++pagePosition);
                  HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid, heapPageId, Permissions.READ_ONLY);
+                 System.out.println(heapPageId);
                  tupleIterator = heapPage.iterator();
                  return tupleIterator.hasNext();
              } else {
