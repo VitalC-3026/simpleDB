@@ -1559,7 +1559,7 @@ class BTreeFileReverseIterator extends AbstractDbFileIterator{
      * @return the next tuple, or null if none exists
      */
     @Override
-    protected Tuple readNext() throws NoSuchFieldException, IOException, DbException, InterruptedException {
+    protected Tuple readNext() throws NoSuchFieldException, IOException, DbException, InterruptedException, TransactionAbortedException {
         if (it != null && !it.hasNext())
             it = null;
 

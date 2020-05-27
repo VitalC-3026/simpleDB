@@ -85,24 +85,29 @@ public class BufferPool {
      * @param perm the requested permissions on the page
      */
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
-            throws IOException, NoSuchFieldException, DbException, InterruptedException {
+            throws IOException, NoSuchFieldException, DbException, InterruptedException, TransactionAbortedException {
         // some code goes here
+        long start = System.currentTimeMillis();
         LockRepository.LockType result = null;
         if(perm.toString().equals(Permissions.READ_ONLY.toString())) {
             result = lockRepository.requireShareLock(tid, pid, perm);
         } else {
             result = lockRepository.requireExclusiveLock(tid, pid, perm);
         }
-        System.out.println(tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
+        // System.out.println(tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
         while(result.equals(LockRepository.LockType.Block)) {
             Thread.sleep(blockTime);
-            System.out.println("sleeping: "+tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
+            // System.out.println("sleeping: "+tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
             if(perm.toString().equals(Permissions.READ_ONLY.toString())){
                 result = lockRepository.requireShareLock(tid, pid, perm);
             } else {
                 result = lockRepository.requireExclusiveLock(tid, pid, perm);
             }
-            System.out.println("another try: "+tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
+            long end = System.currentTimeMillis();
+            if (end - start > blockTime * 20) {
+                throw new TransactionAbortedException();
+            }
+            // System.out.println("another try: "+tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
         }
         if (result.equals(LockRepository.LockType.ShareLock)) {
             Iterator<PageId> it = bufferPoolEdit.keySet().iterator();
@@ -334,33 +339,6 @@ public class BufferPool {
     private synchronized void evictPage() throws DbException, IOException, NoSuchFieldException {
         // some code goes here
         // not necessary for lab1
-        /*Random r = new Random();
-        int page2evict = r.nextInt(numPages);
-        Iterator<PageId> it = bufferPoolEdit.keySet().iterator();
-        int i = 0;
-        while (it.hasNext() && i < page2evict - 1) {
-            it.next();
-            i++;
-        }
-        PageId pageId = it.next();
-        Page page = bufferPoolEdit.get(pageId);
-        if (page.isDirty() == null) {
-            flushPage(pageId);
-            bufferPoolEdit.remove(pageId);
-        } else {
-            it = bufferPoolEdit.keySet().iterator();
-            while (it.hasNext()) {
-                page = bufferPoolEdit.get(it.next());
-                if (page.isDirty() == null) {
-                    flushPage(pageId);
-                    bufferPoolEdit.remove(pageId);
-                    return;
-                }
-            }
-            if (!it.hasNext()) {
-                throw new DbException("all pages in the buffer pool are dirty");
-            }
-        }*/
         Iterator<PageId> it = bufferPoolEdit.keySet().iterator();
         while(it.hasNext()) {
             PageId pageId = it.next();

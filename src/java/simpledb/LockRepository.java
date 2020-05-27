@@ -8,22 +8,31 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LockRepository {
-    private ConcurrentHashMap<TransactionId, PageId> waitingList = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<TransactionId, LockState> waitingList = new ConcurrentHashMap<>();
     private ConcurrentHashMap<PageId, List<LockState>> locksList = new ConcurrentHashMap<>();
 
     public enum LockType {
         ExclusiveLock, ShareLock, Block, None
     };
 
-    public class LockState {
+    public static class LockState {
         TransactionId tid;
         LockType lockType;
         Permissions permissions;
+        PageId pid;
+        static int count = 0;
 
         public LockState(TransactionId tid, LockType lockType, Permissions permissions) {
             this.tid = tid;
             this.lockType = lockType;
             this.permissions = permissions;
+        }
+
+        public LockState(TransactionId tid, PageId pid, Permissions permissions) {
+            this.tid = tid;
+            this.pid = pid;
+            this.permissions = permissions;
+            count++;
         }
 
         public boolean equals(TransactionId tid) {
@@ -62,34 +71,6 @@ public class LockRepository {
                 return LockType.ShareLock;
             }
             case None: {
-                /*System.out.println("None");
-                if (isWaiting(tid, pid).equals(LockType.ExclusiveLock)) {
-                    System.out.println("Block");
-                    List<LockState> states = waitingList.get(pid);
-                    states.add(new LockState(tid, LockType.ShareLock));
-                    waitingList.put(pid, states);
-                    // 是否可以加入这个排它锁到locksList？
-                    return LockType.Block;
-                } else if ((isWaiting(tid, pid).equals(LockType.None))){
-                    System.out.println("None");
-                    if (waitingList.containsKey(pid) && (waitingList.get(pid) != null && waitingList.get(pid).size() != 0)) {
-                        List<LockState> states = waitingList.get(pid);
-                        for (LockState state: states) {
-                            if (!state.tid.equals(tid) && state.lockType.equals(LockType.ExclusiveLock)) {
-                                // 是否可以加入这个排它锁到locksList里？
-                                states.add(new LockState(tid, LockType.ShareLock));
-                                waitingList.replace(pid, states);
-                                return LockType.Block;
-                            }
-                        }
-                    }
-                    return lock(tid, pid, LockType.ShareLock);
-                } else {
-                    List<LockState> states = waitingList.get(pid);
-                    states.remove(new LockState(tid, LockType.ShareLock));
-                    waitingList.put(pid, states);
-                    return lock(tid, pid, LockType.ShareLock);
-                }*/
                 // 如果当前tid没有对pid获取到任何锁，会有3种情况：
                 // ①pid上有一个排它锁，但权限为READ_ONLY，则将这个锁改回共享锁，并允许tid获取到pid的共享锁
                 // ②pid上只要有一个权限为READ_WRITE的排它锁，那么当前tid阻塞
@@ -106,14 +87,14 @@ public class LockRepository {
                         lockStateList.add(lockState);
                         lockStateList.add(new LockState(tid, LockType.ShareLock, permissions));
                     } else {
-                        waitingList.put(tid, pid);
+                        waitingList.put(tid, new LockState(tid, pid, permissions));
                         return LockType.Block;
                     }
 
                 }
                 for (LockState state: lockStateList) {
                     if (!state.tid.equals(tid) && state.lockType.equals(LockType.ExclusiveLock)) {
-                        waitingList.put(tid, pid);
+                        waitingList.put(tid, new LockState(tid, pid, permissions));
                         return LockType.Block;
                     }
                 }
@@ -150,7 +131,7 @@ public class LockRepository {
                 }
                 for (LockState state: states) {
                     if (!state.tid.equals(tid) && (state.lockType.equals(LockType.ShareLock) || state.permissions.equals(Permissions.READ_ONLY))) {
-                        waitingList.put(tid, pid);
+                        waitingList.put(tid, new LockState(tid, pid, permissions));
                         return LockType.Block;
                     }
                 }
@@ -174,21 +155,6 @@ public class LockRepository {
         }
         return LockType.None;
     }
-
-    /*public synchronized LockType isWaiting(TransactionId tid, PageId pid) {
-        if (waitingList.containsKey(pid)){
-            List<LockState> lockState = waitingList.get(pid);
-            if (lockState != null && lockState.size() != 0) {
-                for (LockState state: lockState) {
-                    if (state.tid.equals(tid)) {
-                        return state.lockType;
-                    }
-                }
-            }
-            return LockType.None;
-        }
-        return LockType.None;
-    }*/
 
     public synchronized boolean unlock(TransactionId tid, PageId pid){
         if (isHoldingLock(tid, pid).equals(LockType.None)) {
@@ -233,24 +199,6 @@ public class LockRepository {
         }
     }
 
-    /*public synchronized void wait(TransactionId tid, PageId pid, LockType type) {
-        if (waitingList.containsKey(pid)) {
-            List<LockState> lockStates = waitingList.get(pid);
-            if (lockStates == null) {
-                List<LockState> stateList = new ArrayList<>();
-                stateList.add(new LockState(tid, type));
-                waitingList.put(pid, stateList);
-            } else {
-                lockStates.add(new LockState(tid, type));
-                waitingList.replace(pid, lockStates);
-            }
-        } else {
-            List<LockState> stateList = new ArrayList<>();
-            stateList.add(new LockState(tid, type));
-            waitingList.put(pid, stateList);
-        }
-    }*/
-
     public synchronized ArrayList<PageId> releaseAllLock(TransactionId tid) {
         ArrayList<PageId> pages = new ArrayList<>();
         for (PageId pageId : locksList.keySet()) {
@@ -265,5 +213,37 @@ public class LockRepository {
         }
         return pages;
     }
+
+    public synchronized boolean hasDeadlock(TransactionId tid, PageId pid, Permissions permissions) {
+        List<LockState> lockStates = locksList.get(pid);
+        if (lockStates != null && lockStates.size() != 0) {
+            for(LockState state: lockStates) {
+                if(waitingList.containsKey(state.tid)) {
+
+                }
+            }
+        }
+        return false;
+    }
 }
 
+class Graph {
+    LinkedList<Edge> edges = new LinkedList<>();
+
+    void addEdge(TransactionId from, TransactionId to) {
+        edges.add(new Edge(from, to));
+    }
+
+    boolean isAcyclic() {
+        return false;
+    }
+}
+
+class Edge {
+    TransactionId from;
+    TransactionId to;
+    Edge(TransactionId from, TransactionId to) {
+        this.from = from;
+        this.to = to;
+    }
+}
