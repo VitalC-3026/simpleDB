@@ -1,15 +1,13 @@
 package simpledb;
 
 import java.beans.Transient;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LockRepository {
     private ConcurrentHashMap<TransactionId, LockState> waitingList = new ConcurrentHashMap<>();
     private ConcurrentHashMap<PageId, List<LockState>> locksList = new ConcurrentHashMap<>();
+    private Graph graph = new Graph();
 
     public enum LockType {
         ExclusiveLock, ShareLock, Block, None
@@ -123,14 +121,15 @@ public class LockRepository {
                 // 如果当前tid没有拥有pid的锁，那会出现以下几种情况：
                 // ①pid上没有任何锁，那就可以放心大胆地允许tid获取pid的排它锁
                 // ②pid上有其他tid上的共享锁或者是有READ_ONLY权限的排它锁，此时tid只能阻塞
-                // ③pid上有其他tid上获取的排它锁，阻塞？
+                // ③pid上有其他tid上获取的排它锁，阻塞
                 // System.out.println("NoLock HOLDING");
                 List<LockState> states = locksList.get(pid);
                 if (states == null || states.size() == 0){
                     return lock(tid, pid, LockType.ExclusiveLock, permissions);
                 }
                 for (LockState state: states) {
-                    if (!state.tid.equals(tid) && (state.lockType.equals(LockType.ShareLock) || state.permissions.equals(Permissions.READ_ONLY))) {
+                    if (!state.tid.equals(tid) && (state.lockType.equals(LockType.ShareLock) ||
+                            state.permissions.equals(Permissions.READ_ONLY) || state.lockType.equals(LockType.ExclusiveLock))) {
                         waitingList.put(tid, new LockState(tid, pid, permissions));
                         return LockType.Block;
                     }
@@ -218,9 +217,45 @@ public class LockRepository {
         List<LockState> lockStates = locksList.get(pid);
         if (lockStates != null && lockStates.size() != 0) {
             for(LockState state: lockStates) {
-                if(waitingList.containsKey(state.tid)) {
-
+                if(!tid.equals(state.tid)) {
+                    LinkedList<LockState> waitStates = getAllPageByTid(state.tid);
+                    boolean res = isWaitingResources(tid, waitStates, state.tid, state.permissions);
+                    if (res) {
+                        return true;
+                    }
                 }
+            }
+        }
+        return false;
+    }
+
+    public LinkedList<LockState> getAllPageByTid(TransactionId tid) {
+        return new LinkedList<>();
+    }
+
+    public boolean isWaitingResources(TransactionId tid, LinkedList<LockState> waitPid, TransactionId toRollback, Permissions permissions) {
+        // 这种情况意味着对于pid而言，它有
+        if (permissions.equals(Permissions.READ_ONLY)) {
+            boolean flag = false;
+            for (LockState lockState : waitPid) {
+                if (lockState.permissions.equals(Permissions.READ_WRITE)) {
+                    flag = true;
+                }
+                if (lockState.tid.equals(toRollback) && flag) {
+                    return true;
+                }
+            }
+        } else {
+            for (LockState lockState : waitPid) {
+                if (lockState.tid.equals(toRollback)) {
+                    return true;
+                }
+            }
+        }
+        for (LockState lockState : waitPid) {
+            LinkedList<LockState> waitP = getAllPageByTid(lockState.tid);
+            if(isWaitingResources(lockState.tid, waitP, toRollback, permissions)){
+                return true;
             }
         }
         return false;
@@ -228,13 +263,18 @@ public class LockRepository {
 }
 
 class Graph {
-    LinkedList<Edge> edges = new LinkedList<>();
-
+    HashMap<TransactionId, LinkedList<TransactionId>> edges = new HashMap<>();
+    HashMap<TransactionId, Integer> visited = new HashMap<>();
     void addEdge(TransactionId from, TransactionId to) {
-        edges.add(new Edge(from, to));
+        LinkedList<TransactionId> toEdge = edges.get(from);
+        if (toEdge == null) {
+            toEdge = new LinkedList<>();
+        }
+        toEdge.add(to);
     }
 
     boolean isAcyclic() {
+
         return false;
     }
 }
