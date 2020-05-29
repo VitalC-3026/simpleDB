@@ -1,13 +1,12 @@
 package simpledb;
 
-import java.beans.Transient;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LockRepository {
     private ConcurrentHashMap<TransactionId, LockState> waitingList = new ConcurrentHashMap<>();
     private ConcurrentHashMap<PageId, List<LockState>> locksList = new ConcurrentHashMap<>();
-    private Graph graph = new Graph();
+    public Graph graph = new Graph();
 
     public enum LockType {
         ExclusiveLock, ShareLock, Block, None
@@ -18,19 +17,18 @@ public class LockRepository {
         LockType lockType;
         Permissions permissions;
         PageId pid;
-        static int count = 0;
-
-        public LockState(TransactionId tid, LockType lockType, Permissions permissions) {
-            this.tid = tid;
-            this.lockType = lockType;
-            this.permissions = permissions;
-        }
 
         public LockState(TransactionId tid, PageId pid, Permissions permissions) {
             this.tid = tid;
             this.pid = pid;
             this.permissions = permissions;
-            count++;
+        }
+
+        public LockState(TransactionId tid, PageId pid, LockType lockType, Permissions permissions) {
+            this.tid = tid;
+            this.pid = pid;
+            this.lockType = lockType;
+            this.permissions = permissions;
         }
 
         public boolean equals(TransactionId tid) {
@@ -66,10 +64,11 @@ public class LockRepository {
                 for (LockState state: lockStateList) {
                     if (!state.tid.equals(tid) && state.lockType.equals(LockType.ExclusiveLock)) {
                         waitingList.put(tid, new LockState(tid, pid, permissions));
+                        graph.addSchedule(new LockState(tid, pid, permissions));
                         return LockType.Block;
                     }
                 }
-                lockStateList.add(new LockState(tid, LockType.ShareLock, permissions));
+                lockStateList.add(new LockState(tid, pid, LockType.ShareLock, permissions));
                 locksList.replace(pid, lockStateList);
                 return LockType.ShareLock;
             }
@@ -83,21 +82,10 @@ public class LockRepository {
                 if (lockStateList == null || lockStateList.size() == 0){
                     return lock(tid, pid, LockType.ShareLock, permissions);
                 }
-                /*if (lockStateList.size() == 1) {
-                    LockState lockState = lockStateList.iterator().next();
-                    if (lockState.permissions.equals(Permissions.READ_ONLY)) {
-                        lockState.lockType = LockType.ShareLock;
-                        lockStateList.add(lockState);
-                        lockStateList.add(new LockState(tid, LockType.ShareLock, permissions));
-                    } else {
-                        waitingList.put(tid, new LockState(tid, pid, permissions));
-                        return LockType.Block;
-                    }
-
-                }*/
                 for (LockState state: lockStateList) {
                     if (!state.tid.equals(tid) && state.lockType.equals(LockType.ExclusiveLock)) {
                         waitingList.put(tid, new LockState(tid, pid, permissions));
+                        graph.addSchedule(new LockState(tid, pid, permissions));
                         return LockType.Block;
                     }
                 }
@@ -122,10 +110,11 @@ public class LockRepository {
                 for (LockState state: states) {
                     if (state.lockType.equals(LockType.ExclusiveLock) && !state.tid.equals(tid)) {
                         waitingList.put(tid, new LockState(tid, pid, permissions));
+                        graph.addSchedule(new LockState(tid, pid, permissions));
                         return LockType.Block;
                     }
                 }
-                states.add(new LockState(tid, LockType.ExclusiveLock, permissions));
+                states.add(new LockState(tid, pid, LockType.ExclusiveLock, permissions));
                 locksList.replace(pid, states);
                 return LockType.ExclusiveLock;
             }
@@ -143,7 +132,7 @@ public class LockRepository {
                     if (!state.tid.equals(tid) && (state.lockType.equals(LockType.ShareLock) ||
                             state.permissions.equals(Permissions.READ_ONLY) || state.lockType.equals(LockType.ExclusiveLock))) {
                         waitingList.put(tid, new LockState(tid, pid, permissions));
-                        System.out.println(state.lockType);
+                        graph.addSchedule(new LockState(tid, pid, permissions));
                         return LockType.Block;
                     }
                 }
@@ -183,32 +172,39 @@ public class LockRepository {
     }
 
     public synchronized LockType lock(TransactionId tid, PageId pid, LockType type, Permissions permissions) {
+        LockType resultType;
         if (locksList.containsKey(pid)) {
             List<LockState> states = locksList.get(pid);
             if (states == null || states.size() == 0) {
                 states = new ArrayList<>();
-                states.add(new LockState(tid, LockType.ExclusiveLock, permissions));
+                states.add(new LockState(tid, pid, LockType.ExclusiveLock, permissions));
                 locksList.replace(pid, states);
-                // System.out.println("Exclusive");
-                return LockType.ExclusiveLock;
+                resultType = LockType.ExclusiveLock;
             } else if (states.size() == 1 && states.iterator().next().tid.equals(tid)) {
                 states.iterator().next().lockType = LockType.ExclusiveLock;
                 locksList.replace(pid, states);
-                // System.out.println("Exclusive");
-                return LockType.ExclusiveLock;
+                resultType =  LockType.ExclusiveLock;
             } else {
-                states.add(new LockState(tid, type, permissions));
+                states.add(new LockState(tid, pid, type, permissions));
                 locksList.replace(pid, states);
-                // System.out.println(type);
-                return type;
+                resultType = type;
             }
         } else {
             List<LockState> states = new ArrayList<>();
-            states.add(new LockState(tid, LockType.ExclusiveLock, permissions));
+            states.add(new LockState(tid, pid, LockType.ExclusiveLock, permissions));
             locksList.put(pid, states);
-            // System.out.println("Exclusive");
-            return LockType.ExclusiveLock;
+            resultType = LockType.ExclusiveLock;
         }
+        Iterator<TransactionId> it = waitingList.keySet().iterator();
+        while(it.hasNext()) {
+            LockState state = waitingList.get(it.next());
+            if (state.tid.equals(tid) && state.pid.equals(pid)) {
+                it.remove();
+                graph.deleteSchedule(state);
+            }
+        }
+
+        return resultType;
     }
 
     public synchronized ArrayList<PageId> releaseAllLock(TransactionId tid) {
@@ -277,26 +273,109 @@ public class LockRepository {
 
 class Graph {
     HashMap<TransactionId, LinkedList<TransactionId>> edges = new HashMap<>();
-    HashMap<TransactionId, Integer> visited = new HashMap<>();
-    void addEdge(TransactionId from, TransactionId to) {
-        LinkedList<TransactionId> toEdge = edges.get(from);
-        if (toEdge == null) {
-            toEdge = new LinkedList<>();
+    LinkedList<LockRepository.LockState> schedule = new LinkedList<>();
+
+    void addSchedule(LockRepository.LockState lockState) {
+        schedule.add(lockState);
+    }
+
+    void deleteSchedule(LockRepository.LockState lockState) {
+        schedule.remove(lockState);
+        Iterator<TransactionId> it = edges.keySet().iterator();
+        while(it.hasNext()) {
+            TransactionId tid = it.next();
+            if (tid.equals(lockState.tid)) {
+                it.remove();
+            } else {
+                LinkedList<TransactionId> t = edges.get(tid);
+                t.removeIf(transactionId -> transactionId.equals(tid));
+            }
         }
-        toEdge.add(to);
     }
 
-    boolean isAcyclic() {
-
-        return false;
+    void buildPrecedenceGraph() {
+        HashMap<PageId, LinkedList<Integer>> transactionsByPage = new HashMap<>();
+        for(int i = 0; i < schedule.size(); i++) {
+            LockRepository.LockState state = schedule.get(i);
+            if (transactionsByPage.containsKey(state.pid)) {
+                LinkedList<Integer> transactions = transactionsByPage.get(state.pid);
+                transactions.add(i);
+                transactionsByPage.replace(state.pid, transactions);
+            } else {
+                LinkedList<Integer> transactions = new LinkedList<>();
+                transactions.add(i);
+                transactionsByPage.put(state.pid, transactions);
+            }
+        }
+        Iterator<PageId> it = transactionsByPage.keySet().iterator();
+        LinkedList<TransactionId> STransactions = new LinkedList<>();
+        while(it.hasNext()) {
+            LinkedList<Integer> transactions = transactionsByPage.get(it.next());
+            LockRepository.LockState newLockState, oldLockState = null;
+            for(Integer integer: transactions) {
+               newLockState = schedule.get(integer);
+               if (newLockState.permissions.equals(Permissions.READ_WRITE)) {
+                   if (STransactions.size() != 0) {
+                       for (TransactionId tid: STransactions) {
+                           if (!edges.containsKey(tid)) {
+                               edges.put(tid, new LinkedList<>());
+                           }
+                           LinkedList<TransactionId> t = edges.get(tid);
+                           t.add(newLockState.tid);
+                           edges.replace(tid, t);
+                       }
+                       STransactions = new LinkedList<TransactionId>();
+                   }
+                   if (oldLockState != null) {
+                       LinkedList<TransactionId> t = edges.get(newLockState.tid);
+                       if (t == null) {
+                           t = new LinkedList<>();
+                       }
+                       t.add(oldLockState.tid);
+                       edges.replace(newLockState.tid, t);
+                   }
+                   oldLockState = newLockState;
+               } else {
+                   if (oldLockState != null) {
+                       LinkedList<TransactionId> t = edges.get(newLockState.tid);
+                       if (t == null) {
+                           t = new LinkedList<>();
+                       }
+                       t.add(oldLockState.tid);
+                       edges.replace(newLockState.tid, t);
+                   }
+                   STransactions.add(newLockState.tid);
+               }
+            }
+        }
     }
-}
 
-class Edge {
-    TransactionId from;
-    TransactionId to;
-    Edge(TransactionId from, TransactionId to) {
-        this.from = from;
-        this.to = to;
+    boolean isCyclic() {
+        int count = 0;
+        Stack<TransactionId> stack = new Stack<>();
+        HashMap<TransactionId, Integer> inDegree = findInDegree();
+        for(TransactionId transactionId: inDegree.keySet()) {
+            if(inDegree.get(transactionId) == 0) {
+                stack.push(transactionId);
+            }
+        }
+        while (!stack.empty()) {
+            TransactionId tid = stack.pop();
+            LinkedList<TransactionId> transactionIds = edges.get(tid);
+            count++;
+            for(TransactionId transactionId: transactionIds) {
+                int oldValue = inDegree.get(transactionId);
+                int newValue = --oldValue;
+                if (newValue == 0) {
+                    stack.push(transactionId);
+                }
+                inDegree.replace(transactionId, oldValue, newValue);
+            }
+        }
+        return count < edges.keySet().size();
+    }
+
+    HashMap<TransactionId, Integer> findInDegree(){
+        return new HashMap<>();
     }
 }
