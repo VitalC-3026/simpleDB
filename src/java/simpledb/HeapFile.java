@@ -1,5 +1,7 @@
 package simpledb;
 
+import org.omg.Messaging.SYNC_WITH_TRANSPORT;
+
 import java.io.*;
 import java.util.*;
 
@@ -118,6 +120,7 @@ public class HeapFile implements DbFile {
         for (int i = 0; i < numPages(); i++) {
             HeapPageId heapPageId = new HeapPageId(getId(), i);
             HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid, heapPageId, Permissions.READ_WRITE);
+            System.out.println("insert: " + t.toString() + " " +  ((IntField) t.getField(0)).getValue());
             if (heapPage.getNumEmptySlots() > 0) {
                 heapPage.insertTuple(t);
                 heapPage.markDirty(true, tid);

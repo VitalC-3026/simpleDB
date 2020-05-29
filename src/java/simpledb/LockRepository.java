@@ -63,13 +63,19 @@ public class LockRepository {
                 // 如果当前的tid已经获得了对pid的排它锁，那也就是可以获得对pid的共享锁，不需要阻塞
                 System.out.println("Require SLock: ExclusiveLock HOLDING");
                 List<LockState> lockStateList = locksList.get(pid);
+                for (LockState state: lockStateList) {
+                    if (!state.tid.equals(tid) && state.lockType.equals(LockType.ExclusiveLock)) {
+                        waitingList.put(tid, new LockState(tid, pid, permissions));
+                        return LockType.Block;
+                    }
+                }
                 lockStateList.add(new LockState(tid, LockType.ShareLock, permissions));
                 locksList.replace(pid, lockStateList);
                 return LockType.ShareLock;
             }
             case None: {
                 // 如果当前tid没有对pid获取到任何锁，会有3种情况：
-                // ①pid上有一个排它锁，但权限为READ_ONLY，则将这个锁改回共享锁，并允许tid获取到pid的共享锁
+                // ①pid上有一个排它锁，但权限为READ_ONLY，则将这个锁改回共享锁，并允许tid获取到pid的共享锁 xxx
                 // ②pid上只要有一个权限为READ_WRITE的排它锁，那么当前tid阻塞
                 // ③pid上有不同tid上需要的共享锁，那么当前tid也可以获得pid的共享锁
                 System.out.println("Require SLock: NoLock HOLDING");
@@ -77,7 +83,7 @@ public class LockRepository {
                 if (lockStateList == null || lockStateList.size() == 0){
                     return lock(tid, pid, LockType.ShareLock, permissions);
                 }
-                if (lockStateList.size() == 1) {
+                /*if (lockStateList.size() == 1) {
                     LockState lockState = lockStateList.iterator().next();
                     if (lockState.permissions.equals(Permissions.READ_ONLY)) {
                         lockState.lockType = LockType.ShareLock;
@@ -88,7 +94,7 @@ public class LockRepository {
                         return LockType.Block;
                     }
 
-                }
+                }*/
                 for (LockState state: lockStateList) {
                     if (!state.tid.equals(tid) && state.lockType.equals(LockType.ExclusiveLock)) {
                         waitingList.put(tid, new LockState(tid, pid, permissions));
@@ -120,6 +126,7 @@ public class LockRepository {
                     }
                 }
                 states.add(new LockState(tid, LockType.ExclusiveLock, permissions));
+                locksList.replace(pid, states);
                 return LockType.ExclusiveLock;
             }
             case None: {

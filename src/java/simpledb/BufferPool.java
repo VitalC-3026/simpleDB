@@ -103,7 +103,7 @@ public class BufferPool {
                 result = lockRepository.requireExclusiveLock(tid, pid, perm);
             }
             long end = System.currentTimeMillis();
-            if (end - start > blockTime * 20) {
+            if (end - start > blockTime * 50) {
                 throw new TransactionAbortedException();
             }
             System.out.println("another try: "+tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
@@ -113,13 +113,9 @@ public class BufferPool {
             return bufferPoolEdit.get(pid);
         }
         if (bufferPoolEdit.size() < numPages) {
-            if (bufferPoolEdit.containsKey(pid)) {
-                return bufferPoolEdit.get(pid);
-            } else {
-                Page newPage = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
-                bufferPoolEdit.put(pid, newPage);
-                return newPage;
-            }
+            Page newPage = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
+            bufferPoolEdit.put(pid, newPage);
+            return newPage;
         } else {
             evictPage();
             Page newPage = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
@@ -180,17 +176,6 @@ public class BufferPool {
         if (commit) {
             // 将当前tid下所有的page写入磁盘
             flushPages(tid);
-            /*for (PageId pageId: pages) {
-                if (bufferPoolEdit.containsKey(pageId)) {
-                    DbFile file = Database.getCatalog().getDatabaseFile(pageId.getTableId());
-                    Page page = bufferPoolEdit.get(pageId);
-                    page.markDirty(false, tid);
-                    file.writePage(page);
-                } else {
-                    throw new IllegalArgumentException("Dirty page is not in the buffer pool");
-                }
-            }*/
-
         } else {
             // 将当前tid下所有的page都从磁盘中重新获取
             for (PageId pageId: pages) {

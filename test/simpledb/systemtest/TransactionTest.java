@@ -45,6 +45,7 @@ public class TransactionTest extends SimpleDbTestBase {
             try {
                 tester.join(timeout);
             } catch (InterruptedException e) {
+                e.printStackTrace();
                 throw new RuntimeException(e);
             }
             if (tester.isAlive()) {
@@ -136,13 +137,11 @@ public class TransactionTest extends SimpleDbTestBase {
                         tr.commit();
                         break;
                     } catch (TransactionAbortedException te) {
-                        // System.out.println("thread " + tr.getId() + " killed");
                         // give someone else a chance: abort the transaction
                         tr.transactionComplete(true);
                         latch.stillParticipating();
                     }
                 }
-                //System.out.println("thread " + id + " done");
             } catch (Exception e) {
                 // Store exception for the master thread to handle
                 exception = e;
