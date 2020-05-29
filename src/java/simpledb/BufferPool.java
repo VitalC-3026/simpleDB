@@ -94,10 +94,9 @@ public class BufferPool {
         } else {
             result = lockRepository.requireExclusiveLock(tid, pid, perm);
         }
-        // System.out.println(tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
+        System.out.println(tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
         while(result.equals(LockRepository.LockType.Block)) {
             Thread.sleep(blockTime);
-            // System.out.println("sleeping: "+tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
             if(perm.toString().equals(Permissions.READ_ONLY.toString())){
                 result = lockRepository.requireShareLock(tid, pid, perm);
             } else {
@@ -107,15 +106,7 @@ public class BufferPool {
             if (end - start > blockTime * 20) {
                 throw new TransactionAbortedException();
             }
-            // System.out.println("another try: "+tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
-        }
-        if (result.equals(LockRepository.LockType.ShareLock)) {
-            Iterator<PageId> it = bufferPoolEdit.keySet().iterator();
-            while (it.hasNext()) {
-                Page page = bufferPoolEdit.get(it.next());
-                System.out.println(page.getId());
-                System.out.println(page.isDirty());
-            }
+            System.out.println("another try: "+tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
         }
         // System.out.println(bufferPoolEdit.values());
         if (bufferPoolEdit.containsKey(pid)) {
@@ -345,7 +336,7 @@ public class BufferPool {
             Page page = bufferPoolEdit.get(pageId);
             if (page.isDirty() == null) {
                 flushPage(pageId);
-                System.out.println("evict:"+pageId);
+                // System.out.println("evict:"+pageId);
                 it.remove();
                 return;
             }
