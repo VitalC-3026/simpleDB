@@ -103,6 +103,7 @@ public class TransactionTest extends SimpleDbTestBase {
                         // create a Tuple so that Insert can insert this new value
                         // into the table.
                         Tuple t = new Tuple(SystemTestUtil.SINGLE_INT_DESCRIPTOR);
+                        System.out.println("XactionTester: " + tr.getId() + " " + i);
                         t.setField(0, new IntField(i+1));
 
                         // sleep to get some interesting thread interleavings
@@ -135,7 +136,7 @@ public class TransactionTest extends SimpleDbTestBase {
                         tr.commit();
                         break;
                     } catch (TransactionAbortedException te) {
-                        //System.out.println("thread " + tr.getId() + " killed");
+                        // System.out.println("thread " + tr.getId() + " killed");
                         // give someone else a chance: abort the transaction
                         tr.transactionComplete(true);
                         latch.stillParticipating();

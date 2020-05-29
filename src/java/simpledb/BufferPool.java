@@ -336,7 +336,7 @@ public class BufferPool {
             Page page = bufferPoolEdit.get(pageId);
             if (page.isDirty() == null) {
                 flushPage(pageId);
-                // System.out.println("evict:"+pageId);
+                System.out.println("evict:"+pageId);
                 it.remove();
                 return;
             }
