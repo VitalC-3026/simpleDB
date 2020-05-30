@@ -103,15 +103,15 @@ public class BufferPool {
                 result = lockRepository.requireExclusiveLock(tid, pid, perm);
             }
             if (result.equals(LockRepository.LockType.Block)) {
-                lockRepository.graph.buildPrecedenceGraph();
+                if (lockRepository.hasDeadlock()) {
+                    throw new TransactionAbortedException();
+                }
             }
             long end = System.currentTimeMillis();
-            /*if (end - start > blockTime * 50) {
+            /*if (end - start > blockTime * 30) {
                 throw new TransactionAbortedException();
             }*/
-            if (lockRepository.graph.isCyclic()) {
-                throw new TransactionAbortedException();
-            }
+
             System.out.println("another try: "+tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
         }
         // System.out.println(bufferPoolEdit.values());
@@ -185,10 +185,12 @@ public class BufferPool {
         } else {
             // 将当前tid下所有的page都从磁盘中重新获取
             for (PageId pageId: pages) {
+                DbFile file = Database.getCatalog().getDatabaseFile(pageId.getTableId());
+                Page page = file.readPage(pageId);
                 if (bufferPoolEdit.containsKey(pageId)) {
-                    DbFile file = Database.getCatalog().getDatabaseFile(pageId.getTableId());
-                    Page page = file.readPage(pageId);
                     bufferPoolEdit.replace(pageId, page);
+                } else {
+                    bufferPoolEdit.put(pageId, page);
                 }
             }
         }

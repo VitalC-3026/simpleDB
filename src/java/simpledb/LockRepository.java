@@ -222,58 +222,17 @@ public class LockRepository {
         return pages;
     }
 
-    public synchronized boolean hasDeadlock(TransactionId tid, PageId pid, Permissions permissions) {
-        List<LockState> lockStates = locksList.get(pid);
-        if (lockStates != null && lockStates.size() != 0) {
-            for(LockState state: lockStates) {
-                if(!tid.equals(state.tid)) {
-                    LinkedList<LockState> waitStates = getAllPageByTid(state.tid);
-                    boolean res = isWaitingResources(tid, waitStates, state.tid, state.permissions);
-                    if (res) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+    public synchronized boolean hasDeadlock() {
+        graph.buildPrecedenceGraph();
+        return graph.isCyclic();
     }
 
-    public LinkedList<LockState> getAllPageByTid(TransactionId tid) {
-        return new LinkedList<>();
-    }
-
-    public boolean isWaitingResources(TransactionId tid, LinkedList<LockState> waitPid, TransactionId toRollback, Permissions permissions) {
-        // 这种情况意味着对于pid而言，它有
-        if (permissions.equals(Permissions.READ_ONLY)) {
-            boolean flag = false;
-            for (LockState lockState : waitPid) {
-                if (lockState.permissions.equals(Permissions.READ_WRITE)) {
-                    flag = true;
-                }
-                if (lockState.tid.equals(toRollback) && flag) {
-                    return true;
-                }
-            }
-        } else {
-            for (LockState lockState : waitPid) {
-                if (lockState.tid.equals(toRollback)) {
-                    return true;
-                }
-            }
-        }
-        for (LockState lockState : waitPid) {
-            LinkedList<LockState> waitP = getAllPageByTid(lockState.tid);
-            if(isWaitingResources(lockState.tid, waitP, toRollback, permissions)){
-                return true;
-            }
-        }
-        return false;
-    }
 }
 
 class Graph {
-    HashMap<TransactionId, LinkedList<TransactionId>> edges = new HashMap<>();
+    ConcurrentHashMap<TransactionId, LinkedList<TransactionId>> edges = new ConcurrentHashMap<>();
     LinkedList<LockRepository.LockState> schedule = new LinkedList<>();
+    int pos = 0;
 
     void addSchedule(LockRepository.LockState lockState) {
         schedule.add(lockState);
@@ -293,9 +252,9 @@ class Graph {
         }
     }
 
-    void buildPrecedenceGraph() {
+    synchronized void buildPrecedenceGraph() {
         HashMap<PageId, LinkedList<Integer>> transactionsByPage = new HashMap<>();
-        for(int i = 0; i < schedule.size(); i++) {
+        for(int i = pos; i < schedule.size(); i++) {
             LockRepository.LockState state = schedule.get(i);
             if (transactionsByPage.containsKey(state.pid)) {
                 LinkedList<Integer> transactions = transactionsByPage.get(state.pid);
@@ -307,6 +266,7 @@ class Graph {
                 transactionsByPage.put(state.pid, transactions);
             }
         }
+        pos = schedule.size();
         Iterator<PageId> it = transactionsByPage.keySet().iterator();
         LinkedList<TransactionId> STransactions = new LinkedList<>();
         while(it.hasNext()) {
@@ -322,7 +282,8 @@ class Graph {
                            }
                            LinkedList<TransactionId> t = edges.get(tid);
                            t.add(newLockState.tid);
-                           edges.replace(tid, t);
+                           edges.put(tid, t);
+                           // schedule.remove(newLockState);
                        }
                        STransactions = new LinkedList<TransactionId>();
                    }
@@ -332,7 +293,8 @@ class Graph {
                            t = new LinkedList<>();
                        }
                        t.add(oldLockState.tid);
-                       edges.replace(newLockState.tid, t);
+                       edges.put(newLockState.tid, t);
+                       // schedule.remove(oldLockState);
                    }
                    oldLockState = newLockState;
                } else {
@@ -342,7 +304,8 @@ class Graph {
                            t = new LinkedList<>();
                        }
                        t.add(oldLockState.tid);
-                       edges.replace(newLockState.tid, t);
+                       edges.put(newLockState.tid, t);
+                       // schedule.remove(oldLockState);
                    }
                    STransactions.add(newLockState.tid);
                }
@@ -350,10 +313,10 @@ class Graph {
         }
     }
 
-    boolean isCyclic() {
+    synchronized boolean isCyclic() {
         int count = 0;
         Stack<TransactionId> stack = new Stack<>();
-        HashMap<TransactionId, Integer> inDegree = findInDegree();
+        ConcurrentHashMap<TransactionId, Integer> inDegree = findInDegree();
         for(TransactionId transactionId: inDegree.keySet()) {
             if(inDegree.get(transactionId) == 0) {
                 stack.push(transactionId);
@@ -375,7 +338,20 @@ class Graph {
         return count < edges.keySet().size();
     }
 
-    HashMap<TransactionId, Integer> findInDegree(){
-        return new HashMap<>();
+    synchronized ConcurrentHashMap<TransactionId, Integer> findInDegree(){
+        ConcurrentHashMap<TransactionId, Integer> inDegree = new ConcurrentHashMap<>();
+        for (TransactionId tid : edges.keySet()) {
+            int degree = 0;
+            for (TransactionId id : edges.keySet()) {
+                LinkedList<TransactionId> transactionIds = edges.get(id);
+                for (TransactionId transactionId : transactionIds) {
+                    if (transactionId.equals(tid)) {
+                        degree++;
+                    }
+                }
+            }
+            inDegree.put(tid, degree);
+        }
+        return inDegree;
     }
 }
