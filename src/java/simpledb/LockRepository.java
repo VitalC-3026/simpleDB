@@ -259,7 +259,7 @@ public class LockRepository {
         return pages;
     }
 
-    public synchronized boolean hasDeadlock() {
+    public synchronized TransactionId hasDeadlock() {
         graph.buildPrecedenceGraph();
         return graph.isCyclic();
     }
@@ -272,7 +272,8 @@ class Graph {
 
     void addSchedule(LockRepository.LockState lockState) {
         for (LockRepository.LockState state: schedule) {
-            if (state.tid.equals(lockState.tid) && state.pid.equals(lockState.pid)){
+            if (state.tid.equals(lockState.tid) && state.pid.equals(lockState.pid)
+                    && state.permissions.equals(lockState.permissions)){
                 return;
             }
         }
@@ -280,11 +281,7 @@ class Graph {
     }
 
     void deleteSchedule(LockRepository.LockState lockState) {
-        for (LockRepository.LockState state: schedule) {
-            if (state.tid.equals(lockState.tid) && state.pid.equals(lockState.pid)){
-                schedule.remove(lockState);
-            }
-        }
+        schedule.removeIf(state -> state.tid.equals(lockState.tid) && state.pid.equals(lockState.pid));
 
         /*Iterator<TransactionId> it = edges.keySet().iterator();
         while(it.hasNext()) {
@@ -378,7 +375,7 @@ class Graph {
         }
     }
 
-    synchronized boolean isCyclic() {
+    synchronized TransactionId isCyclic() {
         int count = 0;
         Stack<TransactionId> stack = new Stack<>();
         ConcurrentHashMap<TransactionId, Integer> inDegree = findInDegree();
@@ -400,7 +397,14 @@ class Graph {
                 inDegree.replace(transactionId, oldValue, newValue);
             }
         }
-        return count < edges.keySet().size();
+        if (count < edges.keySet().size()) {
+            for (TransactionId tid : inDegree.keySet()) {
+                if (inDegree.get(tid) != 0) {
+                    return tid;
+                }
+            }
+        }
+        return null;
     }
 
     synchronized ConcurrentHashMap<TransactionId, Integer> findInDegree(){
