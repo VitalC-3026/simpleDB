@@ -46,35 +46,42 @@ public class LockRepository {
                 // 如果当前的事务tid已经获得了对pid的读锁，那么如果pid仅有一个这样的锁，那么就将这个共享锁变成排它锁
                 // 如果pid不仅有当前tid的共享锁，那么就直接返回共享锁，说明可以获取到该锁
                 System.out.println("Require SLock: ShareLock HOLDING");
-                List<LockState> lockStateList = locksList.get(pid);
-                if (lockStateList.size() == 1) {
-                    LockState state = lockStateList.iterator().next();
-                    state.lockType = LockType.ExclusiveLock;
-                    List<LockState> stateList = new ArrayList<>();
-                    stateList.add(state);
-                    locksList.replace(pid, stateList);
-                    return LockType.ExclusiveLock;
-                }
+                /*List<LockState> lockStateList = locksList.get(pid);
+                for (LockState state: lockStateList) {
+                    if (!state.tid.equals(tid) && state.lockType.equals(LockType.ExclusiveLock)) {
+
+                    }
+                }*/
                 return LockType.ShareLock;
             }
             case ExclusiveLock: {
                 // 如果当前的tid已经获得了对pid的排它锁，那也就是可以获得对pid的共享锁，不需要阻塞
                 System.out.println("Require SLock: ExclusiveLock HOLDING");
                 List<LockState> lockStateList = locksList.get(pid);
+                // 如果当前pid获得了其他tid的排它锁，阻塞
                 for (LockState state: lockStateList) {
-                    if (!state.tid.equals(tid) && state.lockType.equals(LockType.ExclusiveLock)) {
+                    if (!state.tid.equals(tid) && state.permissions.equals(Permissions.READ_WRITE)) {
                         waitingList.put(tid, new LockState(tid, pid, permissions));
                         graph.addSchedule(new LockState(tid, pid, permissions));
                         return LockType.Block;
                     }
                 }
-                lockStateList.add(new LockState(tid, pid, LockType.ShareLock, permissions));
+                /*lockStateList.add(new LockState(tid, pid, LockType.ShareLock, permissions));
                 locksList.replace(pid, lockStateList);
+                Iterator<TransactionId> it = waitingList.keySet().iterator();
+                while(it.hasNext()) {
+                    LockState state = waitingList.get(it.next());
+                    if (state.tid.equals(tid) && state.pid.equals(pid)) {
+                        it.remove();
+                        graph.deleteSchedule(state);
+                    }
+                }*/
+                lock(tid, pid, LockType.ShareLock, permissions);
                 return LockType.ShareLock;
             }
             case None: {
                 // 如果当前tid没有对pid获取到任何锁，会有3种情况：
-                // ①pid上有一个排它锁，但权限为READ_ONLY，则将这个锁改回共享锁，并允许tid获取到pid的共享锁 xxx
+                // ①pid上没有任何锁，放心大胆获取，但升级为排它锁
                 // ②pid上只要有一个权限为READ_WRITE的排它锁，那么当前tid阻塞
                 // ③pid上有不同tid上需要的共享锁，那么当前tid也可以获得pid的共享锁
                 System.out.println("Require SLock: NoLock HOLDING");
@@ -82,6 +89,9 @@ public class LockRepository {
                 if (lockStateList == null || lockStateList.size() == 0){
                     return lock(tid, pid, LockType.ShareLock, permissions);
                 }
+                /*if (lockStateList.size() == 1 && lockStateList.iterator().next().permissions.equals(Permissions.READ_ONLY)) {
+                    return lock(tid, pid, LockType.ShareLock, permissions);
+                }*/
                 for (LockState state: lockStateList) {
                     if (!state.tid.equals(tid) && state.lockType.equals(LockType.ExclusiveLock)) {
                         waitingList.put(tid, new LockState(tid, pid, permissions));
@@ -102,20 +112,41 @@ public class LockRepository {
             case ExclusiveLock: {
                 // 如果当前tid已经拥有了pid的排它锁，那么返回该锁即可
                 System.out.println("Require XLock: ExclusiveLock HOLDING");
-                return LockType.ExclusiveLock;}
+                /*List<LockState> states = locksList.get(pid);
+                if (states.size() == 1) {
+                    LockState state = states.iterator().next();
+                    if (state.permissions.equals(Permissions.READ_ONLY)) {
+                        states.iterator().next().lockType = LockType.ShareLock;
+                        locksList.replace(pid, states);
+                        lock(tid, pid, LockType.ExclusiveLock, permissions);
+                    }
+                }*/
+                return LockType.ExclusiveLock;
+            }
             case ShareLock: {
                 // 如果当前tid拥有的是pid的共享锁，那么也允许当前tid获取pid的排它锁
                 System.out.println("Require XLock: ShareLock HOLDING");
                 List<LockState> states = locksList.get(pid);
+                // 如果该pid拥有了其他事务的排它锁，阻塞
                 for (LockState state: states) {
-                    if (state.lockType.equals(LockType.ExclusiveLock) && !state.tid.equals(tid)) {
+                    /*if (state.lockType.equals(LockType.ExclusiveLock) && !state.tid.equals(tid))*/
+                    if (!state.tid.equals(tid)) {
                         waitingList.put(tid, new LockState(tid, pid, permissions));
                         graph.addSchedule(new LockState(tid, pid, permissions));
                         return LockType.Block;
                     }
                 }
-                states.add(new LockState(tid, pid, LockType.ExclusiveLock, permissions));
+                /*states.add(new LockState(tid, pid, LockType.ExclusiveLock, permissions));
                 locksList.replace(pid, states);
+                Iterator<TransactionId> it = waitingList.keySet().iterator();
+                while(it.hasNext()) {
+                    LockState state = waitingList.get(it.next());
+                    if (state.tid.equals(tid) && state.pid.equals(pid)) {
+                        it.remove();
+                        graph.deleteSchedule(state);
+                    }
+                }*/
+                lock(tid, pid, LockType.ExclusiveLock, permissions);
                 return LockType.ExclusiveLock;
             }
             case None: {
@@ -129,8 +160,7 @@ public class LockRepository {
                     return lock(tid, pid, LockType.ExclusiveLock, permissions);
                 }
                 for (LockState state: states) {
-                    if (!state.tid.equals(tid) && (state.lockType.equals(LockType.ShareLock) ||
-                            state.permissions.equals(Permissions.READ_ONLY) || state.lockType.equals(LockType.ExclusiveLock))) {
+                    if (!state.tid.equals(tid)) {
                         waitingList.put(tid, new LockState(tid, pid, permissions));
                         graph.addSchedule(new LockState(tid, pid, permissions));
                         return LockType.Block;
@@ -175,7 +205,7 @@ public class LockRepository {
         LockType resultType;
         if (locksList.containsKey(pid)) {
             List<LockState> states = locksList.get(pid);
-            if (states == null || states.size() == 0) {
+            /*if (states == null || states.size() == 0) {
                 states = new ArrayList<>();
                 states.add(new LockState(tid, pid, LockType.ExclusiveLock, permissions));
                 locksList.replace(pid, states);
@@ -188,12 +218,22 @@ public class LockRepository {
                 states.add(new LockState(tid, pid, type, permissions));
                 locksList.replace(pid, states);
                 resultType = type;
+            }*/
+            if (states == null || states.size() == 0) {
+                states = new ArrayList<>();
             }
+            states.add(new LockState(tid, pid, type, permissions));
+            locksList.replace(pid, states);
+            resultType = type;
         } else {
-            List<LockState> states = new ArrayList<>();
+            /*List<LockState> states = new ArrayList<>();
             states.add(new LockState(tid, pid, LockType.ExclusiveLock, permissions));
             locksList.put(pid, states);
-            resultType = LockType.ExclusiveLock;
+            resultType = LockType.ExclusiveLock;*/
+            List<LockState> states = new ArrayList<>();
+            states.add(new LockState(tid, pid, type, permissions));
+            locksList.put(pid, states);
+            resultType = type;
         }
         Iterator<TransactionId> it = waitingList.keySet().iterator();
         while(it.hasNext()) {
@@ -203,21 +243,22 @@ public class LockRepository {
                 graph.deleteSchedule(state);
             }
         }
-
         return resultType;
     }
 
     public synchronized ArrayList<PageId> releaseAllLock(TransactionId tid) {
         ArrayList<PageId> pages = new ArrayList<>();
         for (PageId pageId : locksList.keySet()) {
-            Iterator<LockState> states = locksList.get(pageId).iterator();
-            while (states.hasNext()) {
-                LockState state = states.next();
+            List<LockState> states = locksList.get(pageId);
+            Iterator<LockState> it = states.iterator();
+            while (it.hasNext()) {
+                LockState state = it.next();
                 if (state.tid.equals(tid)) {
-                    states.remove();
+                    it.remove();
                     pages.add(pageId);
                 }
             }
+            locksList.replace(pageId, states);
         }
         return pages;
     }
@@ -230,9 +271,8 @@ public class LockRepository {
 }
 
 class Graph {
-    ConcurrentHashMap<TransactionId, LinkedList<TransactionId>> edges = new ConcurrentHashMap<>();
+    ConcurrentHashMap<TransactionId, LinkedList<TransactionId>> edges;
     LinkedList<LockRepository.LockState> schedule = new LinkedList<>();
-    int pos = 0;
 
     void addSchedule(LockRepository.LockState lockState) {
         schedule.add(lockState);
@@ -240,21 +280,32 @@ class Graph {
 
     void deleteSchedule(LockRepository.LockState lockState) {
         schedule.remove(lockState);
-        Iterator<TransactionId> it = edges.keySet().iterator();
+        /*Iterator<TransactionId> it = edges.keySet().iterator();
         while(it.hasNext()) {
             TransactionId tid = it.next();
             if (tid.equals(lockState.tid)) {
                 it.remove();
             } else {
                 LinkedList<TransactionId> t = edges.get(tid);
-                t.removeIf(transactionId -> transactionId.equals(tid));
+                for(TransactionId transactionId: t) {
+                    if (transactionId.equals(lockState.tid)) {
+                        t.remove(lockState.tid);
+                    }
+                }
+                edges.replace(tid, t);
             }
         }
+        for (TransactionId tid: edges.keySet()) {
+            if (edges.get(tid).size() == 0) {
+                edges.remove(tid);
+            }
+        }*/
     }
 
     synchronized void buildPrecedenceGraph() {
-        HashMap<PageId, LinkedList<Integer>> transactionsByPage = new HashMap<>();
-        for(int i = pos; i < schedule.size(); i++) {
+        edges = new ConcurrentHashMap<>();
+        ConcurrentHashMap<PageId, LinkedList<Integer>> transactionsByPage = new ConcurrentHashMap<>();
+        for(int i = 0; i < schedule.size(); i++) {
             LockRepository.LockState state = schedule.get(i);
             if (transactionsByPage.containsKey(state.pid)) {
                 LinkedList<Integer> transactions = transactionsByPage.get(state.pid);
@@ -266,7 +317,6 @@ class Graph {
                 transactionsByPage.put(state.pid, transactions);
             }
         }
-        pos = schedule.size();
         Iterator<PageId> it = transactionsByPage.keySet().iterator();
         LinkedList<TransactionId> STransactions = new LinkedList<>();
         while(it.hasNext()) {

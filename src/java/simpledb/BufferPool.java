@@ -107,13 +107,13 @@ public class BufferPool {
                     throw new TransactionAbortedException();
                 }
             }
-            long end = System.currentTimeMillis();
-            /*if (end - start > blockTime * 30) {
+            /*long end = System.currentTimeMillis();
+            if (end - start > blockTime * 20) {
                 throw new TransactionAbortedException();
             }*/
-
             System.out.println("another try: "+tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
         }
+
         // System.out.println(bufferPoolEdit.values());
         if (bufferPoolEdit.containsKey(pid)) {
             return bufferPoolEdit.get(pid);
@@ -142,7 +142,9 @@ public class BufferPool {
     public void releasePage(TransactionId tid, PageId pid) throws DbException {
         // some code goes here
         // not necessary for lab1|lab2
-        if (!lockRepository.unlock(tid, pid)) {
+        if (holdsLock(tid, pid)) {
+            lockRepository.unlock(tid, pid);
+        } else {
             throw new DbException("release a non-existent lock");
         }
     }
