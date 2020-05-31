@@ -108,13 +108,12 @@ public class BufferPool {
                 }
             }
             /*long end = System.currentTimeMillis();
-            if (end - start > blockTime * 20) {
+            if (end - start > blockTime * 5) {
                 throw new TransactionAbortedException();
             }*/
             System.out.println("another try: "+tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
         }
 
-        // System.out.println(bufferPoolEdit.values());
         if (bufferPoolEdit.containsKey(pid)) {
             return bufferPoolEdit.get(pid);
         }

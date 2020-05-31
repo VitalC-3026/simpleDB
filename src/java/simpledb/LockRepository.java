@@ -1,5 +1,7 @@
 package simpledb;
 
+import javafx.util.Pair;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -46,12 +48,6 @@ public class LockRepository {
                 // 如果当前的事务tid已经获得了对pid的读锁，那么如果pid仅有一个这样的锁，那么就将这个共享锁变成排它锁
                 // 如果pid不仅有当前tid的共享锁，那么就直接返回共享锁，说明可以获取到该锁
                 System.out.println("Require SLock: ShareLock HOLDING");
-                /*List<LockState> lockStateList = locksList.get(pid);
-                for (LockState state: lockStateList) {
-                    if (!state.tid.equals(tid) && state.lockType.equals(LockType.ExclusiveLock)) {
-
-                    }
-                }*/
                 return LockType.ShareLock;
             }
             case ExclusiveLock: {
@@ -89,9 +85,6 @@ public class LockRepository {
                 if (lockStateList == null || lockStateList.size() == 0){
                     return lock(tid, pid, LockType.ShareLock, permissions);
                 }
-                /*if (lockStateList.size() == 1 && lockStateList.iterator().next().permissions.equals(Permissions.READ_ONLY)) {
-                    return lock(tid, pid, LockType.ShareLock, permissions);
-                }*/
                 for (LockState state: lockStateList) {
                     if (!state.tid.equals(tid) && state.lockType.equals(LockType.ExclusiveLock)) {
                         waitingList.put(tid, new LockState(tid, pid, permissions));
@@ -150,7 +143,7 @@ public class LockRepository {
                 return LockType.ExclusiveLock;
             }
             case None: {
-                // 如果当前tid没有拥有pid的锁，那会出现以下几种情况：
+                // 如果当前tid没有拥有pid的锁，那会出现以下3种情况：
                 // ①pid上没有任何锁，那就可以放心大胆地允许tid获取pid的排它锁
                 // ②pid上有其他tid上的共享锁或者是有READ_ONLY权限的排它锁，此时tid只能阻塞
                 // ③pid上有其他tid上获取的排它锁，阻塞
@@ -240,9 +233,10 @@ public class LockRepository {
             LockState state = waitingList.get(it.next());
             if (state.tid.equals(tid) && state.pid.equals(pid)) {
                 it.remove();
-                graph.deleteSchedule(state);
+                // graph.deleteSchedule(state);
             }
         }
+        graph.addSchedule(new LockState(tid, pid, type, permissions));
         return resultType;
     }
 
@@ -255,11 +249,13 @@ public class LockRepository {
                 LockState state = it.next();
                 if (state.tid.equals(tid)) {
                     it.remove();
+                    graph.deleteSchedule(state);
                     pages.add(pageId);
                 }
             }
             locksList.replace(pageId, states);
         }
+        System.out.println("here!");
         return pages;
     }
 
@@ -275,11 +271,21 @@ class Graph {
     LinkedList<LockRepository.LockState> schedule = new LinkedList<>();
 
     void addSchedule(LockRepository.LockState lockState) {
+        for (LockRepository.LockState state: schedule) {
+            if (state.tid.equals(lockState.tid) && state.pid.equals(lockState.pid)){
+                return;
+            }
+        }
         schedule.add(lockState);
     }
 
     void deleteSchedule(LockRepository.LockState lockState) {
-        schedule.remove(lockState);
+        for (LockRepository.LockState state: schedule) {
+            if (state.tid.equals(lockState.tid) && state.pid.equals(lockState.pid)){
+                schedule.remove(lockState);
+            }
+        }
+
         /*Iterator<TransactionId> it = edges.keySet().iterator();
         while(it.hasNext()) {
             TransactionId tid = it.next();
@@ -318,7 +324,8 @@ class Graph {
             }
         }
         Iterator<PageId> it = transactionsByPage.keySet().iterator();
-        LinkedList<TransactionId> STransactions = new LinkedList<>();
+        LinkedList<Pair<Integer, TransactionId>> STransactions = new LinkedList<>();
+        LinkedList<Pair<Integer, TransactionId>> XTransactions = new LinkedList<>();
         while(it.hasNext()) {
             LinkedList<Integer> transactions = transactionsByPage.get(it.next());
             LockRepository.LockState newLockState, oldLockState = null;
@@ -326,38 +333,46 @@ class Graph {
                newLockState = schedule.get(integer);
                if (newLockState.permissions.equals(Permissions.READ_WRITE)) {
                    if (STransactions.size() != 0) {
-                       for (TransactionId tid: STransactions) {
-                           if (!edges.containsKey(tid)) {
-                               edges.put(tid, new LinkedList<>());
+                       for (Pair<Integer, TransactionId> pair: STransactions) {
+                           if (!edges.containsKey(pair.getValue())) {
+                               edges.put(pair.getValue(), new LinkedList<>());
                            }
-                           LinkedList<TransactionId> t = edges.get(tid);
-                           t.add(newLockState.tid);
-                           edges.put(tid, t);
+                           if (pair.getKey() < integer && !pair.getValue().equals(newLockState.tid)) {
+                               LinkedList<TransactionId> t = edges.get(pair.getValue());
+                               t.add(newLockState.tid);
+                               edges.put(pair.getValue(), t);
+                           }
+
                            // schedule.remove(newLockState);
                        }
-                       STransactions = new LinkedList<TransactionId>();
                    }
-                   if (oldLockState != null) {
-                       LinkedList<TransactionId> t = edges.get(newLockState.tid);
-                       if (t == null) {
-                           t = new LinkedList<>();
+                   if (XTransactions.size() != 0) {
+                       for (Pair<Integer, TransactionId> pair: XTransactions) {
+                           if (!edges.containsKey(pair.getValue())) {
+                               edges.put(pair.getValue(), new LinkedList<>());
+                           }
+                           if (pair.getKey() < integer && !pair.getValue().equals(newLockState.tid)) {
+                               LinkedList<TransactionId> t = edges.get(pair.getValue());
+                               t.add(newLockState.tid);
+                               edges.put(pair.getValue(), t);
+                           }
                        }
-                       t.add(oldLockState.tid);
-                       edges.put(newLockState.tid, t);
-                       // schedule.remove(oldLockState);
                    }
-                   oldLockState = newLockState;
+                   XTransactions.add(new Pair<>(integer, newLockState.tid));
                } else {
-                   if (oldLockState != null) {
-                       LinkedList<TransactionId> t = edges.get(newLockState.tid);
-                       if (t == null) {
-                           t = new LinkedList<>();
+                   if (XTransactions.size() != 0) {
+                       for (Pair<Integer, TransactionId> pair: XTransactions) {
+                           if (!edges.containsKey(pair.getValue())) {
+                               edges.put(pair.getValue(), new LinkedList<>());
+                           }
+                           if (pair.getKey() < integer && !pair.getValue().equals(newLockState.tid)) {
+                               LinkedList<TransactionId> t = edges.get(pair.getValue());
+                               t.add(newLockState.tid);
+                               edges.put(pair.getValue(), t);
+                           }
                        }
-                       t.add(oldLockState.tid);
-                       edges.put(newLockState.tid, t);
-                       // schedule.remove(oldLockState);
                    }
-                   STransactions.add(newLockState.tid);
+                   STransactions.add(new Pair<>(integer, newLockState.tid));
                }
             }
         }
