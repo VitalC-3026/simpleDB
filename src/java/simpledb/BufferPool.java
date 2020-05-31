@@ -102,15 +102,15 @@ public class BufferPool {
             } else {
                 result = lockRepository.requireExclusiveLock(tid, pid, perm);
             }
-            if (result.equals(LockRepository.LockType.Block)) {
+            /*if (result.equals(LockRepository.LockType.Block)) {
                 if (lockRepository.hasDeadlock()) {
                     throw new TransactionAbortedException();
                 }
-            }
-            /*long end = System.currentTimeMillis();
-            if (end - start > blockTime * 5) {
-                throw new TransactionAbortedException();
             }*/
+            long end = System.currentTimeMillis();
+            if (end - start > blockTime * 20) {
+                throw new TransactionAbortedException();
+            }
             System.out.println("another try: "+tid.toString()+" "+pid.toString()+" "+perm.toString()+" "+result);
         }
 
